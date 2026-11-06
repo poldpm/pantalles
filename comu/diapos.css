@@ -1,0 +1,22 @@
+/* Diapositives generades: compartit entre reproductor i panell */
+.dp { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.15; }
+.dp-fons-img { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-size: cover; background-position: center; }
+.dp-fons-vel { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.6)); }
+.dp-cos { position: relative; width: 86%; max-height: 90%; display: flex; flex-direction: column; }
+.dp-cos > * + * { margin-top: .08em; }
+.dp-cos > .dp-cos-text, .dp-cos > .dp-peu { margin-top: .55em; }
+.dp-al-center { text-align: center; align-items: center; }
+.dp-al-left { text-align: left; align-items: flex-start; }
+.dp-titol { font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
+.dp-cos-text { font-weight: 450; opacity: .96; text-wrap: pretty; }
+.dp-cos-text ul { margin: .2em 0; padding-left: 1.2em; text-align: left; }
+.dp-cos-text li { margin: .25em 0; }
+.dp-buit { height: .6em; }
+.dp-peu { opacity: .85; font-weight: 600; }
+.dp-rel-titol { font-size: 6em; font-weight: 700; opacity: .9; }
+.dp-rel-hora { font-size: 30em; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -.03em; }
+.dp-rel-data { font-size: 6.5em; font-weight: 500; opacity: .92; }
+.dp-rel-data::first-letter { text-transform: uppercase; }
+.dp-compte-num { font-size: 26em; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.dp-compte-unitat { font-size: 7em; font-weight: 600; opacity: .9; }

@@ -1,0 +1,97 @@
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: #fff;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-user-select: none; user-select: none; }
+body.sense-cursor, body.sense-cursor * { cursor: none !important; }
+
+.escenari { position: fixed; top: 50%; left: 50%; width: 100vw; height: 100vh; transform: translate(-50%, -50%);
+  overflow: hidden; background: #000; }
+.contingut { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+
+/* ---------- Capes de contingut i transicions ---------- */
+.capa { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; opacity: 0; background: #000; will-change: opacity, transform; }
+.capa.visible { opacity: 1; }
+.capa img.mitja, .capa video.mitja { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.capa.ajust-contain img.mitja, .capa.ajust-contain video.mitja { object-fit: contain; }
+.capa .fons-borros { position: absolute; top: -6%; right: -6%; bottom: -6%; left: -6%; background-size: cover; background-position: center; filter: blur(40px) brightness(.55); }
+.capa iframe { position: absolute; top: 0; left: 0; border: 0; background: #fff; transform-origin: 0 0; }
+
+.tr-fade { transition: opacity .9s ease; }
+.tr-none { transition: none; }
+.tr-slide { transition: transform .9s cubic-bezier(.65,0,.35,1), opacity .2s; transform: translateX(100%); opacity: 1; }
+.tr-slide.visible { transform: translateX(0); }
+.tr-slide.sortint { transform: translateX(-100%); opacity: 1; }
+.tr-zoom { transition: opacity 1s ease, transform 1.2s ease; transform: scale(1.08); }
+.tr-zoom.visible { transform: scale(1); }
+
+@keyframes kenburns { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
+.kenburns img.mitja { animation: kenburns var(--durada, 10s) linear forwards; }
+
+/* ---------- Superposicions ---------- */
+.sup-rellotge { position: absolute; top: 2.4em; right: 2.6em; padding: .9em 1.6em; border-radius: 1.2em;
+  background: rgba(0,0,0,.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: right; z-index: 20;
+  text-shadow: 0 .1em .4em rgba(0,0,0,.4); }
+.sup-rellotge .h { font-size: 5.2em; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1; }
+.sup-rellotge .d { font-size: 2em; opacity: .9; margin-top: .25em; }
+.sup-logo { position: absolute; top: 2.4em; left: 2.6em; height: 9em; max-width: 30em; object-fit: contain; z-index: 20;
+  filter: drop-shadow(0 .2em .6em rgba(0,0,0,.35)); }
+.sup-cinta { position: absolute; left: 0; right: 0; bottom: 0; height: 7em; display: flex; align-items: center; z-index: 25;
+  background: rgba(12,16,26,.88); box-shadow: 0 -.3em 1.2em rgba(0,0,0,.25); overflow: hidden; }
+.sup-cinta .etiqueta { flex: none; height: 100%; display: flex; align-items: center; padding: 0 2em; font-size: 2.8em;
+  font-weight: 800; background: var(--accent, #c8102e); z-index: 2; letter-spacing: .04em; }
+.sup-cinta .pista { position: relative; flex: 1; height: 100%; overflow: hidden; }
+.sup-cinta .text { position: absolute; top: 50%; left: 0; white-space: nowrap; font-size: 3.2em; font-weight: 600;
+  transform: translate(100vw, -50%); will-change: transform; }
+.sup-cinta .text .sep { color: var(--accent, #c8102e); margin: 0 1.2em; }
+@keyframes cinta { from { transform: translate(var(--inici), -50%); } to { transform: translate(var(--fi), -50%); } }
+.sup-progres { position: absolute; left: 0; bottom: 0; height: .45em; background: rgba(255,255,255,.75); z-index: 26; width: 0; }
+.amb-cinta .sup-progres { bottom: 7em; }
+
+/* ---------- Avisos ---------- */
+.avis-complet { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; padding: 6em; box-sizing: border-box; animation: entraAvis .6s ease; }
+.avis-complet .icona { font-size: 14em; line-height: 1; margin-bottom: .1em; animation: batec 2s ease-in-out infinite; }
+.avis-complet .titol { font-size: 10em; font-weight: 850; line-height: 1.05; text-wrap: balance; }
+.avis-complet .text { font-size: 5em; margin-top: .8em; max-width: 90%; line-height: 1.25; text-wrap: pretty; }
+.avis-banda { position: absolute; left: 0; right: 0; top: 0; z-index: 45; display: flex; align-items: center; gap: 1.6em;
+  padding: 1.6em 3em; box-shadow: 0 .4em 1.6em rgba(0,0,0,.35); animation: baixa .5s ease; }
+.avis-banda .icona { font-size: 5em; }
+.avis-banda .titol { font-size: 4em; font-weight: 800; }
+.avis-banda .text { font-size: 3em; opacity: .95; }
+@keyframes entraAvis { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+@keyframes baixa { from { transform: translateY(-100%); } to { transform: none; } }
+@keyframes batec { 50% { transform: scale(1.12); } }
+
+/* ---------- Pantalles del sistema ---------- */
+.sistema { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; background: radial-gradient(circle at 30% 20%, #26324a, #0c1120 70%); }
+.sistema .logo { height: 16em; max-width: 60em; object-fit: contain; margin-bottom: 3em; }
+.sistema h1 { font-size: 6em; margin: 0 0 .4em; font-weight: 750; }
+.sistema p { font-size: 3em; margin: .3em 0; opacity: .85; max-width: 80%; line-height: 1.35; }
+.sistema .codi { font-size: 20em; font-weight: 800; letter-spacing: .12em; font-variant-numeric: tabular-nums; line-height: 1.05;
+  margin: .1em 0 .15em; padding: 0 .3em; border-radius: .1em; background: rgba(255,255,255,.08); }
+.sistema .petit { font-size: 2.2em; opacity: .6; margin-top: 2em; }
+.sistema .hora-gran { font-size: 22em; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.sistema.repos { background: #000; }
+.sistema.repos .hora-gran { font-size: 9em; opacity: .25; }
+.identifica { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(10,20,40,.88); text-align: center; animation: entraAvis .4s ease; }
+.identifica .nom { font-size: 14em; font-weight: 850; }
+.identifica .lloc { font-size: 5em; opacity: .85; margin-top: .2em; }
+.identifica .det { font-size: 2.6em; opacity: .6; margin-top: 2em; }
+.info { position: absolute; left: 2em; bottom: 9em; z-index: 95; background: rgba(0,0,0,.82); padding: 2em 2.6em; border-radius: 1.2em;
+  font-size: 2.1em; line-height: 1.5; font-family: ui-monospace, Menlo, Consolas, monospace; max-width: 70%; }
+.estat-xarxa { position: absolute; right: 1.4em; bottom: 1.4em; width: 1.6em; height: 1.6em; border-radius: 50%; z-index: 96;
+  background: #f5a524; box-shadow: 0 0 0 .3em rgba(0,0,0,.4); display: none; }
+.amb-cinta .estat-xarxa { bottom: 8.4em; }
+.fora-linia .estat-xarxa { display: block; }
+.prev-etiqueta { position: absolute; left: 1.4em; top: 1.4em; z-index: 97; font-size: 2.2em; padding: .3em .8em; border-radius: .5em;
+  background: rgba(0,0,0,.6); font-weight: 700; }
+.pista-fs { position: absolute; left: 50%; bottom: 12em; transform: translateX(-50%); z-index: 98; font-size: 2.6em; padding: .7em 1.4em;
+  border-radius: 2em; background: rgba(0,0,0,.75); transition: opacity .6s; }
+
+.inici { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center;
+  background: #0c1120; font-size: 20px; z-index: 100; transition: opacity .6s; }
+.inici.amagat { opacity: 0; pointer-events: none; }
+.inici-roda { width: 46px; height: 46px; border-radius: 50%; border: 5px solid rgba(255,255,255,.2); border-top-color: #fff;
+  animation: gira 1s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .kenburns img.mitja { animation: none; } }

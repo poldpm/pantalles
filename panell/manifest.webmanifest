@@ -1,0 +1,10 @@
+{
+  "name": "Panell de Pantalles",
+  "short_name": "Pantalles",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#c8102e",
+  "icons": [{ "src": "../icona.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
