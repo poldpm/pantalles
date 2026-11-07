@@ -1,0 +1,23 @@
+# Quan es publica un canvi al codi del servei (apps-script/), avisa el servei
+# de Google perquè s'actualitzi a l'instant des de GitHub.
+name: Actualitza el servei de Google
+on:
+  push:
+    branches: [main]
+    paths: ['apps-script/**']
+  workflow_dispatch:
+jobs:
+  actualitza:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Avisa el servei
+        run: |
+          URL=$(grep -o "https://script.google.com/macros/s/[^']*/exec" config.js)
+          for i in 1 2 3; do
+            R=$(curl -sSL -m 120 -H 'Content-Type: text/plain' -d '{"action":"selfUpdate"}' "$URL" || true)
+            echo "$R"
+            echo "$R" | grep -q '"ok":true' && echo "$R" | grep -qv '"estat":"espera"' && exit 0
+            sleep 15
+          done
+          exit 1

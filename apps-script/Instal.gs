@@ -36,6 +36,9 @@ function installar() {
   // Activador de la bústia automàtica (cada 10 minuts).
   const jaHiEs = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'revisaBustia'; });
   if (!jaHiEs) ScriptApp.newTrigger('revisaBustia').timeBased().everyMinutes(10).create();
+  // Actualització automàtica des de GitHub (pla B: la normal és a l'instant, en publicar).
+  const jaActualitza = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'actualitzaAutomaticament'; });
+  if (!jaActualitza) ScriptApp.newTrigger('actualitzaAutomaticament').timeBased().everyHours(1).create();
 
   console.log('✅ Instal·lat. Administrador: ' + jo);
   console.log('📁 Carpeta: ' + arrel.getUrl());

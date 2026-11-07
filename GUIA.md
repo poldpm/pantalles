@@ -80,9 +80,20 @@ Al final hi ha la secció de [problemes freqüents](#4-problemes-freqüents).
    - A **Persones amb accés**, afegeix els correus de les persones que han de gestionar les pantalles (2–5). Tria **Editor/a** o **Administrador/a**.
 3. Opcional: al panell, des del mòbil, *Compartir → Afegir a la pantalla d'inici*. Així el tindràs com una app.
 
-### Quan hi hagi una versió nova del codi d'Apps Script
+### Actualitzacions automàtiques (configuració d'una sola vegada)
 
-Enganxa els fitxers nous a l'editor i fes **Implementa → Gestiona les implementacions → ✎ (editar) → Versió: «Versió nova» → Implementa**. L'URL no canvia, i no cal tocar res més.
+Un cop fet això, el servei de Google **s'actualitza sol a l'instant** cada vegada que es publica un canvi a GitHub. Ja no caldrà tornar a copiar fitxers.
+
+1. Entra a **https://script.google.com/home/usersettings** amb el mateix compte i activa **«API de Google Apps Script»**.
+2. A l'editor del projecte **Pantalles**, actualitza per darrera vegada el codi a mà:
+   - Substitueix el contingut de `Codi`, `Dades`, `Acces`, `Mitjans`, `Pantalles`, `Instal` i `appsscript.json` pels de la carpeta [`apps-script/`](apps-script/).
+   - Crea un fitxer nou (**＋ → Script**) anomenat **`Actualitza`** i enganxa-hi [`apps-script/Actualitza.gs`](apps-script/Actualitza.gs).
+3. Desa, tria la funció **`installar`** i prem **▶ Executa**. Et demanarà permisos nous (gestionar els projectes i les implementacions d'Apps Script): accepta'ls.
+4. **Implementa → Gestiona les implementacions → ✎ → Versió: «Versió nova» → Implementa**. L'adreça es manté.
+
+A **Ajustos → Servei de Google** del panell es veu la versió i l'última actualització, i hi ha dos botons: **Actualitza ara** i **Torna a la versió anterior**, per si alguna actualització no anés bé.
+
+Com funciona: quan es publica un canvi a la carpeta `apps-script/`, GitHub avisa el servei. El servei llegeix el codi de la branca principal del repositori (mai d'enlloc més), el copia, en fa una versió nova i la posa en marxa a la mateixa adreça. Si troba un error, es queda la versió que hi havia. A més, cada hora comprova que estigui al dia.
 
 ---
 

@@ -99,8 +99,9 @@ const serveis = {
   Session: { getEffectiveUser: () => ({ getEmail: () => ADMIN }), getActiveUser: () => ({ getEmail: () => '' }) },
   ScriptApp: {
     getOAuthToken: () => 'testoken',
+    getScriptId: () => 'script-de-proves',
     getProjectTriggers: () => [],
-    newTrigger: () => { const t = { timeBased: () => t, everyMinutes: () => t, create: () => t }; return t; }
+    newTrigger: () => { const t = { timeBased: () => t, everyMinutes: () => t, everyHours: () => t, create: () => t }; return t; }
   },
   MailApp: {
     sendEmail: (o) => {

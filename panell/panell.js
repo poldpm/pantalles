@@ -582,7 +582,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.1.0';
+  var VERSIO_SERVEI = '1.2.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -592,8 +592,8 @@
   function htmlAvisServei() {
     if (!serveiAntic()) return '';
     return '<div class="avis-servei"><b>Cal actualitzar el servei de Google.</b> El panell ja té la versió ' + VERSIO_SERVEI +
-      ', però el servei d\'Apps Script encara és la ' + esc(S.d.version || '?') + '. Fins que no s\'actualitzi, les plantilles noves, els peus de foto i el logotip en negatiu no es desaran. ' +
-      'Com fer-ho: copia els fitxers de la carpeta <b>apps-script</b> a l\'editor i fes <b>Implementa → Gestiona les implementacions → ✎ → Versió nova</b>.</div>';
+      ', però el servei de Google encara és la ' + esc(S.d.version || '?') + '. ' +
+      (S.user && S.user.role === 'admin' ? 'Ves a <a href="#ajustos">Ajustos → Servei</a> i prem «Actualitza ara». Si és el primer cop, segueix els passos de la GUIA (apartat «Actualitzacions automàtiques»).' : 'Avisa un administrador.') + '</div>';
   }
 
   VISTES.inici = function () {
@@ -1975,6 +1975,15 @@
       (admin ? '<div class="btns"><button class="btn" data-u-afegeix>＋ Afegeix una persona</button><button class="btn primari" data-u-desa hidden>Desa les persones</button></div>' : '') + '</div>';
     html += '</div>';
 
+    // Servei (actualitzacions)
+    if (admin) {
+      html += '<div class="seccio"><h3>Servei de Google</h3><div class="targeta pad pila" data-servei>' +
+        '<div>Versió del servei: <b>' + esc(d.version) + '</b>' + (serveiAntic() ? ' · <span class="badge error">cal actualitzar (el panell espera la ' + VERSIO_SERVEI + ')</span>' : ' · <span class="badge ok">al dia</span>') + '</div>' +
+        '<div class="subtil" data-servei-estat>Comprovant…</div>' +
+        '<p class="subtil" style="margin:0">El servei s\'actualitza sol des de GitHub cada vegada que es publica un canvi. Aquests botons només calen si alguna cosa no ha anat bé.</p>' +
+        '<div class="btns"><button class="btn primari" data-servei-act>↻ Actualitza ara</button><button class="btn" data-servei-enrere>⟲ Torna a la versió anterior</button></div></div></div>';
+    }
+
     // Instal·lar pantalles
     html += '<div class="seccio"><h3>Com posar una pantalla nova</h3><div class="targeta pad"><div class="fila" style="grid-template-columns:1fr auto;align-items:center">' +
       '<div class="pila" style="gap:8px"><div>1. Connecta a la tele qualsevol aparell amb navegador: la mateixa Smart TV, un miniPC, un Chromecast amb Google TV, un ordinador vell…</div>' +
@@ -2040,6 +2049,27 @@
         var dolents = usuaris.filter(function (u) { return u.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email); });
         if (dolents.length) { toast('Hi ha algun correu mal escrit: ' + dolents[0].email, 'error'); return; }
         crida('saveUsers', { users: usuaris.filter(function (u) { return u.email; }) }, { desa: true }).then(function () { return carrega(); }).then(function () { toast('Persones desades. Ja poden entrar amb el seu correu.', 'ok'); render(true); });
+      };
+    }
+    var caixaServei = $('[data-servei]');
+    if (caixaServei) {
+      crida('serviceStatus', {}, { silenci: true }).then(function (r) {
+        $('[data-servei-estat]').innerHTML = (r.lastUpdate ? 'Última actualització: ' + dataHora(r.lastUpdate) : 'Encara no s\'ha actualitzat mai sol') +
+          (r.lastError ? '<br><span style="color:var(--error)">Últim error: ' + esc(r.lastError) + '</span>' : '');
+      }, function (e) {
+        $('[data-servei-estat]').innerHTML = '<span style="color:var(--error)">Aquest servei encara no sap actualitzar-se sol. Cal fer la configuració inicial (GUIA → «Actualitzacions automàtiques»).</span>';
+      });
+      $('[data-servei-act]').onclick = function () {
+        var b = this; b.disabled = true; b.innerHTML = '<span class="roda petita"></span> Actualitzant…';
+        crida('updateService', { force: true }, { desa: true, timeout: 120000 }).then(function (r) {
+          toast(r.missatge, 'ok', 6000);
+          setTimeout(function () { location.reload(); }, 2500);
+        }, function () { b.disabled = false; b.textContent = '↻ Actualitza ara'; });
+      };
+      $('[data-servei-enrere]').onclick = function () {
+        confirma('Tornar a la versió anterior', 'El servei tornarà a la versió d\'abans de l\'última actualització. Fes-ho només si alguna cosa ha deixat de funcionar.', { ok: 'Torna-hi' }).then(function (si) {
+          if (si) crida('rollbackService', {}, { desa: true, timeout: 120000 }).then(function (r) { toast(r.missatge, 'ok', 6000); setTimeout(function () { location.reload(); }, 2500); });
+        });
       };
     }
     $('[data-copia-url]').onclick = function () { var u = urlReproductor(); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('Copiat', 'ok'); }, function () {}); };

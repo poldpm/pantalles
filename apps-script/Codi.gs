@@ -18,7 +18,8 @@ function accionsPubliques_() { return {
   chunk: accioTros_,
   loginStart: accioIniciaLogin_,
   loginVerify: accioVerificaLogin_,
-  logout: accioSurt_
+  logout: accioSurt_,
+  selfUpdate: accioAutoActualitza_
 }; }
 
 // [funció, cal ser administrador]
@@ -45,7 +46,10 @@ function accionsPanell_() { return {
   deleteAlert: [accioEsborraAvis_, false],
   saveTicker: [accioDesaCinta_, false],
   saveSettings: [accioDesaAjustos_, true],
-  saveUsers: [accioDesaUsuaris_, true]
+  saveUsers: [accioDesaUsuaris_, true],
+  updateService: [accioActualitzaServei_, true],
+  rollbackService: [accioTornaVersio_, true],
+  serviceStatus: [accioEstatServei_, true]
 }; }
 
 function doGet(e) {

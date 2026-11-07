@@ -8,7 +8,7 @@
  * perquè dues persones editant alhora no es trepitgin.
  */
 
-const VERSIO_APP = '1.1.0';
+const VERSIO_APP = '1.2.0';
 const NOM_CARPETA_APP = 'Pantalles de l\'escola (no esborrar)';
 const MAX_REGISTRE = 400;
 
