@@ -4,5 +4,5 @@
  *  (Implementa → Gestiona les implementacions → URL que acaba en /exec).
  * ===================================================================== */
 window.PANTALLES_CONFIG = {
-  apiUrl: 'ENGANXA_AQUI_LA_URL_DE_APPS_SCRIPT'
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzJWaVopHNuUYS83fjIsmx6Ck98jf-IVtvD1PMkmNNFP2ID7jxd-7hYhyVKCj7NE9CM/exec'
 };
