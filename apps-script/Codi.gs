@@ -217,7 +217,7 @@ function accioDesaLlista_(req, u) {
     const nou = !l;
     if (nou) { l = { id: nouId_('l'), items: [], v: 0, created: new Date().toISOString() }; bd.playlists.push(l); }
     l.name = text_(e.name, 80) || 'Llista sense nom';
-    l.color = color_(e.color, '#3b6fd8');
+    l.color = color_(e.color, '#821E34');
     l.on = e.on !== false;
     l.schedule = netejaHorari_(e.schedule);
     l.items = [].concat(e.items || []).slice(0, 500).map(function (it) { return netejaItem_(it, bd); });

@@ -9,26 +9,6 @@
   --radi: 0; --radi-petit: 0; --radi-etiqueta: 4px;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --accent: #c84a66; --accent-fosc: #d9627c; --accent-suau: #3a1d24; --vermell: #FF004E;
-    --fons: #1f1c1a; --superficie: #2D2926; --superficie-2: #383330; --vora: #463f3a; --vora-forta: #5a524b;
-    --text: #F4F1ED; --text-2: #BFB8AF; --text-3: #8f867e;
-    --ok: #3ccf7a; --ok-suau: #15301f; --avis: #f0b44a; --avis-suau: #33280f; --error: #ff6b61; --error-suau: #3a1816;
-    --info: #6ea2ff; --info-suau: #17253d;
-    --ombra: none; --ombra-gran: 0 0 0 1px var(--vora-forta);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --accent: #c84a66; --accent-fosc: #d9627c; --accent-suau: #3a1d24; --vermell: #FF004E;
-  --fons: #1f1c1a; --superficie: #2D2926; --superficie-2: #383330; --vora: #463f3a; --vora-forta: #5a524b;
-  --text: #F4F1ED; --text-2: #BFB8AF; --text-3: #8f867e;
-  --ok: #3ccf7a; --ok-suau: #15301f; --avis: #f0b44a; --avis-suau: #33280f; --error: #ff6b61; --error-suau: #3a1816;
-  --info: #6ea2ff; --info-suau: #17253d;
-  --ombra: none; --ombra-gran: 0 0 0 1px var(--vora-forta);
-  color-scheme: dark;
-}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -374,8 +354,6 @@ input[type=color] { width: 44px; height: 38px; padding: 2px; border: 1px solid v
  * ===================================================================== */
 h1, h2, h3 { font-weight: 700; letter-spacing: -.005em; }
 .capcalera h2, .salutacio h2 { color: var(--accent); font-size: 28px; line-height: 1; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .capcalera h2, :root:not([data-theme="light"]) .salutacio h2 { color: var(--text); } }
-:root[data-theme="dark"] .capcalera h2, :root[data-theme="dark"] .salutacio h2 { color: var(--text); }
 .seccio > h3 { font-size: 13px; letter-spacing: .12em; color: var(--text-2); display: flex; align-items: center; gap: 10px; }
 .seccio > h3::before { content: ""; width: 18px; height: 4px; background: var(--vermell); flex: none; }
 .btn { font-weight: 600; border-radius: 0; }
@@ -453,3 +431,122 @@ input, select, textarea { border-radius: 0 !important; }
 .plantilla span { display: block; font-size: 12px; color: var(--text-2); line-height: 1.25; }
 .miniatura.diapo { padding: 0; }
 .avis-servei { border-left: 6px solid var(--vermell); background: var(--superficie); padding: 12px 16px; margin-bottom: 18px; font-size: 14px; }
+
+/* =====================================================================
+ *  Acabat professional (aparença sempre clara)
+ * ===================================================================== */
+:root { color-scheme: light; --vora: #E4DFD8; --vora-forta: #CFC8BF; --fons: #F4F1ED; --superficie-2: #F1EDE8; }
+body { font-size: 15.5px; }
+.ic-svg { flex: none; display: inline-block; vertical-align: -3px; }
+.btn { gap: 8px; min-height: 40px; padding: 8px 16px; letter-spacing: .005em; }
+.btn .ic-svg { width: 17px; height: 17px; }
+.btn.petit { min-height: 32px; padding: 4px 12px; gap: 6px; }
+.btn.petit .ic-svg { width: 15px; height: 15px; }
+.btn.icona { width: 38px; min-height: 38px; padding: 0; }
+.btn.icona .ic-svg { width: 18px; height: 18px; }
+.btn:not(.primari):not(.perill-ple):not(.fantasma):hover { border-color: var(--accent); color: var(--accent); background: var(--superficie); }
+.btn.fantasma { color: var(--text-2); }
+.btn.fantasma:hover { color: var(--accent); background: var(--accent-suau); }
+.btn.perill-ple { background: var(--accent); border-color: var(--accent); }
+input[type=text], input[type=email], input[type=number], input[type=date], input[type=time], input[type=datetime-local], input[type=url], input[type=search], select, textarea {
+  min-height: 44px; border-color: var(--vora-forta); padding: 10px 12px; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent) !important; outline-offset: -1px; border-color: var(--accent); }
+label.camp, .camp { font-size: 13px; letter-spacing: .01em; color: var(--text); font-weight: 700; }
+
+/* Menú lateral */
+.menu { width: 248px; padding: 0 0 18px; }
+.principal { margin-left: 248px; }
+.menu-marca { padding: 30px 24px 26px !important; margin: 0 0 14px !important; border-bottom: 1px solid rgba(255,255,255,.14); }
+.menu-marca .logo-menu { width: 100%; max-width: 196px; height: auto; max-height: 120px; object-fit: contain; object-position: left center; display: block; }
+.menu-marca .nom-marca { font-size: 22px; }
+.menu-marca .sub-marca { margin-top: 14px; }
+.menu a:not(.menu-marca) { margin: 0 12px; padding: 11px 14px; font-size: 15px; gap: 14px; }
+.menu a.actiu::before { left: -12px; }
+.menu .ic { width: 20px; display: inline-flex; }
+
+/* Barra superior i contingut */
+.barra { background: var(--superficie); border-bottom: 1px solid var(--vora); padding: 0 40px; min-height: 64px; backdrop-filter: none; }
+.barra-titol { font-size: 17px; font-weight: 700; color: var(--text); }
+.barra-titol .torna { color: var(--text-2); display: inline-flex; align-items: center; }
+.barra-titol .torna:hover { color: var(--accent); }
+.vista { padding: 36px 40px 72px; max-width: 1200px; }
+.capcalera { margin-bottom: 26px; align-items: flex-end; }
+.capcalera h2, .salutacio h2 { font-size: 32px; letter-spacing: -.01em; }
+.capcalera p, .salutacio p { color: var(--text-2); margin-top: 8px; font-size: 15.5px; max-width: 720px; }
+.seccio { margin-top: 40px; }
+.seccio > h3 { margin-bottom: 16px; }
+.targeta { border-color: var(--vora); }
+.targeta.pad { padding: 24px; }
+.targeta h3 { font-size: 17px; }
+
+/* Xifres de l'inici */
+.resum { gap: 16px; margin: 26px 0; }
+.xifra { padding: 20px 22px; border-top-width: 3px; transition: border-color .15s; }
+.xifra:hover { border-color: var(--vora-forta); border-top-color: var(--accent); }
+.xifra .n { font-size: 38px; line-height: 1; letter-spacing: -.02em; }
+.xifra .e { margin-top: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+.boto-urgent { min-height: 84px; padding: 18px 22px; gap: 18px; }
+.boto-urgent b { font-size: 18px; margin-bottom: 2px; }
+.targeta.btn { border-color: var(--vora); }
+
+/* Etiquetes i estats */
+.badge { border-radius: 2px; font-size: 12px; letter-spacing: .02em; padding: 3px 9px; }
+.punt { border-radius: 0; width: 8px; height: 8px; }
+.chip { border-radius: 2px; background: var(--superficie-2); font-weight: 600; }
+
+/* Llistes i elements */
+.item { padding: 10px 12px 10px 8px; gap: 14px; transition: border-color .15s; }
+.item:hover { border-color: var(--vora-forta); }
+.item .mans { color: var(--text-3); padding: 6px 2px; display: inline-flex; }
+.item .mans:hover { color: var(--accent); }
+.miniatura { width: 112px; height: 63px; }
+.miniatura .ic-svg { color: var(--text-3); }
+.t-llista { padding: 16px 18px; gap: 18px; }
+.t-llista:hover { border-color: var(--accent); }
+.t-llista .mosaic { width: 112px; height: 70px; }
+.afegir-barra { border: 1px dashed var(--vora-forta); background: var(--superficie); padding: 14px; gap: 10px; }
+
+/* Targetes de pantalla */
+.t-pantalla .mini { border-bottom: 0; }
+.t-pantalla .mini .veure { border-radius: 0; background: rgba(45,41,38,.85); display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; }
+.t-pantalla .cos { padding: 18px 20px 14px; }
+.t-pantalla h3 { font-size: 19px; }
+.t-pantalla .peu { padding: 0 20px 18px; }
+
+/* Biblioteca */
+.zona-pujada { border: 1px dashed var(--vora-forta); padding: 34px 20px; }
+.zona-pujada .gran-ic, .buit .gran-ic { display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: var(--accent-suau); color: var(--accent); margin-bottom: 14px; opacity: 1; }
+.zona-pujada .gran-ic .ic-svg, .buit .gran-ic .ic-svg { width: 28px; height: 28px; }
+.mitja .img .ic-svg { width: 30px; height: 30px; }
+.mitja .marca { border-radius: 0; }
+.buit { padding: 48px 24px; }
+.buit h3 { font-size: 20px; }
+
+/* Finestres i avisos */
+.capa-modal { background: rgba(45,41,38,.55); }
+.modal { border-top: 4px solid var(--accent); box-shadow: 0 24px 60px rgba(45,41,38,.25); }
+.modal-cap { padding: 18px 24px; }
+.modal-cap h2 { font-size: 20px; }
+.modal-cos { padding: 22px 24px; }
+.modal-peu { padding: 16px 24px; background: var(--superficie-2); }
+.toast { background: var(--negre, #2D2926); border-left: 4px solid var(--vermell); border-radius: 0; }
+.toast.error { background: var(--accent); }
+.desplegable { box-shadow: 0 16px 40px rgba(45,41,38,.18); border-radius: 0; padding: 6px; }
+.desplegable button { align-items: center; gap: 12px; font-weight: 600; font-size: 14.5px; border-radius: 0; }
+.desplegable button .ic-svg { color: var(--text-2); }
+.desplegable button:hover .ic-svg { color: var(--accent); }
+.usuari { width: 38px; height: 38px; font-size: 16px; }
+.indicador { font-weight: 600; }
+.avis-caixa { border-radius: 0; border-left: 4px solid var(--avis); }
+.avis-caixa.info { border-left-color: var(--info); }
+
+@media (max-width: 860px) {
+  .principal { margin-left: 0; }
+  .menu { width: auto; padding: 4px 4px env(safe-area-inset-bottom); }
+  .menu a:not(.menu-marca) { margin: 0; padding: 7px 2px; font-size: 10.5px; gap: 3px; }
+  .menu .ic { width: auto; }
+  .barra { padding: 0 16px; min-height: 56px; }
+  .vista { padding: 22px 16px 40px; }
+  .capcalera h2, .salutacio h2 { font-size: 26px; }
+  .miniatura { width: 72px; height: 41px; }
+}

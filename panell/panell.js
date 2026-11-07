@@ -225,7 +225,7 @@
     tancaModal();
     var capa = $('#capa-modal');
     capa.innerHTML = '<div class="modal ' + (o.classe || '') + '" role="dialog" aria-modal="true" aria-label="' + esc(o.titol) + '">' +
-      '<div class="modal-cap"><h2>' + esc(o.titol) + '</h2><button class="btn fantasma icona" data-tanca aria-label="Tanca">✕</button></div>' +
+      '<div class="modal-cap"><h2>' + esc(o.titol) + '</h2><button class="btn fantasma icona" data-tanca aria-label="Tanca">' + IC('tanca') + '</button></div>' +
       '<div class="modal-cos">' + (o.cos || '') + '</div>' +
       (o.peu ? '<div class="modal-peu">' + o.peu + '</div>' : '') + '</div>';
     capa.hidden = false;
@@ -379,9 +379,9 @@
         e.stopPropagation();
         obreDesplegable(b, [
           { html: '<div class="qui"><b>' + esc(u.name || '') + '</b><br>' + esc(u.email) + '<br>' + (u.role === 'admin' ? 'Administrador/a' : 'Editor/a') + '</div>' },
-          { text: '⚙ Ajustos', fes: function () { location.hash = '#ajustos'; } },
-          { text: '↻ Recarrega les dades', fes: function () { carrega().then(function () { render(); toast('Dades actualitzades', 'ok'); }); } },
-          { text: '⎋ Tanca la sessió', fes: function () { surt(false); } }
+          { text: IC('ajustos') + 'Ajustos', fes: function () { location.hash = '#ajustos'; } },
+          { text: IC('recarrega') + 'Recarrega les dades', fes: function () { carrega().then(function () { render(); toast('Dades actualitzades', 'ok'); }); } },
+          { text: IC('surt') + 'Tanca la sessió', fes: function () { surt(false); } }
         ]);
       };
       render();
@@ -390,7 +390,7 @@
       if (S.session) {
         $('#carregant').classList.add('amagat');
         $('#app').hidden = false;
-        $('#vista').innerHTML = '<div class="buit"><div class="gran-ic">⚠</div><h3>No es pot connectar amb el servei</h3><p>Comprova la connexió a internet.</p><button class="btn primari" onclick="location.reload()">Torna-ho a provar</button></div>';
+        $('#vista').innerHTML = '<div class="buit"><div class="gran-ic">' + IC('alerta') + '</div><h3>No es pot connectar amb el servei</h3><p>Comprova la connexió a internet.</p><button class="btn primari" onclick="location.reload()">Torna-ho a provar</button></div>';
       }
     });
   }
@@ -457,7 +457,7 @@
 
   function connectada(p) { var st = S.d.status[p.id]; return !!(st && st.seen && araServidor() - st.seen < 100000); }
 
-  var ICONES = { media: '▦', text: 'Aa', web: '🌐', youtube: '▶', clock: '🕒', countdown: '⏳' };
+  var ICONES = { media: IC('biblioteca'), text: IC('text'), web: IC('web'), youtube: IC('play'), clock: IC('rellotge'), countdown: IC('compte') };
   var NOMS_TIPUS = { text: 'Text', web: 'Web', youtube: 'YouTube', clock: 'Rellotge', countdown: 'Compte enrere', image: 'Foto', video: 'Vídeo' };
 
   function nomItem(it) {
@@ -477,15 +477,15 @@
     if (it.kind === 'media') {
       var m = troba(S.d.media, it.mediaId);
       var th = S.thumbs[it.mediaId];
-      return '<div class="miniatura ' + (classe || '') + '" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : '▦') +
-        (m && m.kind === 'video' ? '<span class="tipus">▶ ' + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') + '</div>';
+      return '<div class="miniatura ' + (classe || '') + '" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : IC('biblioteca')) +
+        (m && m.kind === 'video' ? '<span class="tipus">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') + '</div>';
     }
     if (it.kind === 'text' || it.kind === 'clock' || it.kind === 'countdown') {
       var clau = 'd' + (++comptadorDiapos);
       registreDiapos[clau] = it;
       return '<div class="miniatura diapo ' + (classe || '') + '" data-diapo="' + clau + '"></div>';
     }
-    if (it.kind === 'youtube') return '<div class="miniatura ' + (classe || '') + '" style="background:#e62117;color:#fff">▶</div>';
+    if (it.kind === 'youtube') return '<div class="miniatura ' + (classe || '') + '" style="background:#e62117;color:#fff">' + IC('play') + '</div>';
     return '<div class="miniatura ' + (classe || '') + '">' + (ICONES[it.kind] || '?') + '</div>';
   }
 
@@ -512,7 +512,7 @@
     var e = Pnt.estatHorari(h, Pnt.horaLocal(araServidor()));
     var cls = { actiu: 'ok', futur: 'info', caducat: 'error', fora: '' }[e];
     var txt = { actiu: 'Ara actiu', futur: 'Encara no', caducat: 'Caducat', fora: 'Ara no toca' }[e];
-    return '<span class="badge ' + cls + '" title="' + esc(Pnt.resumHorari(h)) + '">🗓 ' + esc(Pnt.resumHorari(h)) + ' · ' + txt + '</span>';
+    return '<span class="badge ' + cls + '" title="' + esc(Pnt.resumHorari(h)) + '">' + IC('calendari') + esc(Pnt.resumHorari(h)) + ' · ' + txt + '</span>';
   }
 
   /* ---------- Editor d'horaris (reutilitzable) ---------- */
@@ -614,8 +614,8 @@
       '<a class="targeta xifra" href="#avisos"><div class="n" style="' + (av.length ? 'color:var(--error)' : '') + '">' + av.length + '</div><div class="e">avisos actius</div></a></div>';
 
     html += '<div class="fila" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' +
-      '<button class="boto-urgent" data-accio="urgent"><span class="gran-ic">⚠</span><span><b>Avís urgent</b>Mostra un missatge ara mateix a les pantalles</span></button>' +
-      '<button class="targeta btn" style="justify-content:flex-start;padding:16px 18px;gap:14px;height:auto" data-accio="pujar"><span style="font-size:28px">⇪</span><span style="text-align:left"><b style="display:block;font-size:16px">Pujar fotos o vídeos</b><span class="subtil" style="font-weight:400">També PDF i presentacions del Canva</span></span></button></div>';
+      '<button class="boto-urgent" data-accio="urgent"><span class="gran-ic">' + IC('alerta') + '</span><span><b>Avís urgent</b>Mostra un missatge ara mateix a les pantalles</span></button>' +
+      '<button class="targeta btn" style="justify-content:flex-start;padding:16px 18px;gap:14px;height:auto" data-accio="pujar"><span style="display:inline-flex;width:52px;height:52px;align-items:center;justify-content:center;background:var(--accent-suau);color:var(--accent)">' + IC('pujar', 26) + '</span><span style="text-align:left"><b style="display:block;font-size:16px">Pujar fotos o vídeos</b><span class="subtil" style="font-weight:400">També PDF i presentacions del Canva</span></span></button></div>';
 
     if (av.length) {
       html += '<div class="seccio"><h3>Avisos que s\'estan mostrant</h3><div class="pila">' + av.map(htmlAvis).join('') + '</div></div>';
@@ -641,7 +641,7 @@
 
     html += '<div class="seccio"><h3>Ara mateix a les pantalles</h3>';
     if (d.screens.length) html += '<div class="graella">' + d.screens.map(targetaPantalla).join('') + '</div>';
-    else html += '<div class="targeta buit"><div class="gran-ic">▭</div><h3>Cap pantalla encara</h3><p>Obre el reproductor a la tele i vincula-la amb el codi que surt.</p><a class="btn primari" href="#pantalles">Afegir pantalla</a></div>';
+    else html += '<div class="targeta buit"><div class="gran-ic">' + IC('pantalles') + '</div><h3>Cap pantalla encara</h3><p>Obre el reproductor a la tele i vincula-la amb el codi que surt.</p><a class="btn primari" href="#pantalles">Afegir pantalla</a></div>';
     html += '</div>';
 
     var reg = (d.log || []).slice(0, 6);
@@ -675,13 +675,13 @@
     return '<div class="targeta t-pantalla" data-pantalla="' + p.id + '">' +
       '<div class="mini" data-previa="' + p.id + '" title="Vista prèvia" style="' + (fons ? 'background:' + esc(fons).replace(/&#39;/g, "'") + ';background-size:cover;background-position:center' : '') + '">' +
       diapo + (fons || diapo ? '' : '<div class="sense">' + (ara.length ? '' : 'Sense contingut ara mateix') + '</div>') +
-      '<span class="estat badge ' + e.classe + '"><span class="punt"></span>' + esc(e.text) + '</span><span class="veure">▶ Vista prèvia</span></div>' +
+      '<span class="estat badge ' + e.classe + '"><span class="punt"></span>' + esc(e.text) + '</span><span class="veure">' + IC('previa') + 'Vista prèvia</span></div>' +
       '<div class="cos"><h3>' + esc(p.name) + '</h3>' +
       (p.location ? '<div class="subtil">' + esc(p.location) + '</div>' : '') +
       (e.detall ? '<div class="molt-subtil">' + esc(e.detall) + '</div>' : '') +
       '<div class="chips">' + (llistes.length ? llistes.map(chipLlista).join('') : '<span class="badge avis">Sense llistes</span>') + '</div>' +
       '<div class="molt-subtil">' + ara.length + ' element' + (ara.length === 1 ? '' : 's') + ' actius ara</div></div>' +
-      '<div class="peu"><a class="btn petit" href="#pantalla/' + p.id + '">⚙ Configura</a><button class="btn petit" data-identifica="' + p.id + '" title="Mostra el nom a la tele durant 20 segons">◎ Identifica</button></div></div>';
+      '<div class="peu"><a class="btn petit" href="#pantalla/' + p.id + '">' + IC('ajustos') + 'Configura</a><button class="btn petit" data-identifica="' + p.id + '" title="Mostra el nom a la tele durant 20 segons">' + IC('identifica') + 'Identifica</button></div></div>';
   }
   function activaTargetesPantalla(cont) {
     $$('[data-previa]', cont).forEach(function (b) { b.onclick = function () { vistaPrevia(b.dataset.previa); }; });
@@ -722,11 +722,11 @@
     titol('Pantalles');
     var d = S.d;
     var html = '<div class="capcalera"><div><h2>Pantalles</h2><p>Cada tele, monitor o aparell que mostra contingut.</p></div>' +
-      '<div class="btns"><button class="btn" data-accio="totes" title="Torna a carregar l\'aplicació a totes les pantalles">↻ Reinicia-les totes</button><button class="btn primari" data-accio="afegir">＋ Afegir pantalla</button></div></div>';
+      '<div class="btns"><button class="btn" data-accio="totes" title="Torna a carregar l\'aplicació a totes les pantalles">' + IC('recarrega') + 'Reinicia-les totes</button><button class="btn primari" data-accio="afegir">' + IC('mes') + 'Afegir pantalla</button></div></div>';
     if (!d.screens.length) {
-      html += '<div class="targeta buit"><div class="gran-ic">▭</div><h3>Encara no hi ha cap pantalla</h3>' +
+      html += '<div class="targeta buit"><div class="gran-ic">' + IC('pantalles') + '</div><h3>Encara no hi ha cap pantalla</h3>' +
         '<p>1. A la tele (o a l\'aparell connectat a la tele) obre el navegador i ves a:<br><b>' + esc(urlReproductor()) + '</b><br>2. Sortirà un codi de 6 xifres.<br>3. Prem «Afegir pantalla» i escriu-lo.</p>' +
-        '<button class="btn primari" data-accio="afegir">＋ Afegir pantalla</button></div>';
+        '<button class="btn primari" data-accio="afegir">' + IC('mes') + 'Afegir pantalla</button></div>';
     } else html += '<div class="graella">' + d.screens.map(targetaPantalla).join('') + '</div>';
     $('#vista').innerHTML = html;
     $$('[data-accio=afegir]').forEach(function (b) { b.onclick = afegirPantalla; });
@@ -805,7 +805,7 @@
       cos: '<div class="pila"><p style="margin:0">Obre aquest enllaç al navegador de l\'aparell de la tele. Quedarà vinculat i l\'enllaç desapareixerà de la barra d\'adreces.</p>' +
         '<div class="copiar"><input type="text" readonly value="' + esc(url) + '"><button class="btn" data-copia>Copia</button></div>' +
         '<div style="text-align:center"><div class="qr" data-qr><span class="roda"></span></div><div class="molt-subtil">Escaneja\'l amb l\'aparell (si té càmera) o amb el mòbil per enviar-te\'l.</div></div>' +
-        '<div class="avis-caixa">⚠ Qui tingui aquest enllaç pot veure el contingut d\'aquesta pantalla. No el comparteixis. Si cal, el pots renovar des de la configuració de la pantalla.</div></div>',
+        '<div class="avis-caixa">' + IC('alerta') + 'Qui tingui aquest enllaç pot veure el contingut d\'aquesta pantalla. No el comparteixis. Si cal, el pots renovar des de la configuració de la pantalla.</div></div>',
       peu: '<button class="btn primari" data-tanca>Fet</button>',
       enObrir: function (el) {
         $('[data-copia]', el).onclick = function () {
@@ -835,7 +835,7 @@
     var o = p.overlays || {}, h = p.hours || {};
     var opt = function (v, actual, text) { return '<option value="' + v + '"' + (String(v) === String(actual) ? ' selected' : '') + '>' + text + '</option>'; };
     var html = '<div class="capcalera"><div><h2>' + esc(p.name) + '</h2><p><span class="badge ' + e.classe + '"><span class="punt"></span>' + esc(e.text) + '</span> ' + esc(e.detall || '') + '</p></div>' +
-      '<div class="btns"><button class="btn primari" data-accio="previa">▶ Vista prèvia</button><button class="btn" data-accio="identifica">◎ Identifica</button><button class="btn icona" data-accio="mes" aria-label="Més opcions">⋯</button></div></div>';
+      '<div class="btns"><button class="btn primari" data-accio="previa">' + IC('previa') + 'Vista prèvia</button><button class="btn" data-accio="identifica">' + IC('identifica') + 'Identifica</button><button class="btn icona" data-accio="mes" aria-label="Més opcions">' + IC('puntets') + '</button></div></div>';
 
     html += '<div class="fila" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">';
     // Contingut
@@ -844,13 +844,13 @@
       '<div class="pila" style="gap:8px">' + (assignades.length ? assignades.map(function (l, i) {
         return '<div class="item"><span class="num">' + (i + 1) + '</span><div class="text"><b><span class="chip" style="background:none;padding:0"><span class="color" style="background:' + esc(l.color) + '"></span>' + esc(l.name) + '</span></b>' +
           '<div class="meta">' + l.items.length + ' elements' + (l.on === false ? ' · <span class="badge error">Llista aturada</span>' : '') + (l.schedule ? ' · ' + badgeHorari(l.schedule) : '') + '</div></div>' +
-          '<div class="accions"><button class="btn fantasma icona" data-amunt="' + i + '" aria-label="Amunt"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
-          '<button class="btn fantasma icona" data-avall="' + i + '" aria-label="Avall"' + (i === assignades.length - 1 ? ' disabled' : '') + '>↓</button>' +
-          '<a class="btn fantasma icona" href="#llista/' + l.id + '" aria-label="Edita la llista">✎</a>' +
-          '<button class="btn fantasma icona" data-treu="' + l.id + '" aria-label="Treu">✕</button></div></div>';
+          '<div class="accions"><button class="btn fantasma icona" data-amunt="' + i + '" aria-label="Amunt"' + (i === 0 ? ' disabled' : '') + '>' + IC('amunt') + '</button>' +
+          '<button class="btn fantasma icona" data-avall="' + i + '" aria-label="Avall"' + (i === assignades.length - 1 ? ' disabled' : '') + '>' + IC('avall') + '</button>' +
+          '<a class="btn fantasma icona" href="#llista/' + l.id + '" aria-label="Edita la llista">' + IC('edita') + '</a>' +
+          '<button class="btn fantasma icona" data-treu="' + l.id + '" aria-label="Treu">' + IC('tanca') + '</button></div></div>';
       }).join('') : '<div class="avis-caixa">Aquesta pantalla no té cap llista. Ara mateix mostra el logotip, el nom de l\'escola i l\'hora.</div>') + '</div>' +
-      (noAssignades.length ? '<div class="btns"><select data-afegeix-llista style="max-width:260px"><option value="">＋ Afegeix una llista…</option>' + noAssignades.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('') + '</select></div>' : '') +
-      '<a class="btn" href="#llistes" style="align-self:flex-start">☰ Veure totes les llistes</a></div>';
+      (noAssignades.length ? '<div class="btns"><select data-afegeix-llista style="max-width:260px"><option value="">' + IC('mes') + 'Afegeix una llista…</option>' + noAssignades.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('') + '</select></div>' : '') +
+      '<a class="btn" href="#llistes" style="align-self:flex-start">' + IC('llistes') + 'Veure totes les llistes</a></div>';
 
     // Configuració
     html += '<div class="targeta pad pila" data-form><h3 style="margin:0">Configuració</h3>' +
@@ -892,18 +892,18 @@
     $('[data-accio=mes]').onclick = function (ev) {
       ev.stopPropagation();
       var ops = [
-        { text: '↻ Reinicia el reproductor', fes: function () { crida('screenCommand', { id: id, type: 'reload' }, { desa: true }).then(function () { toast('Es reiniciarà en menys d\'un minut.', 'ok'); }); } },
-        { text: '🧹 Esborra i torna a descarregar els fitxers', fes: function () { crida('screenCommand', { id: id, type: 'clearcache' }, { desa: true }).then(function () { toast('Ordre enviada.', 'ok'); }); } },
-        { text: '🔗 Enllaç i codi QR d\'aquesta pantalla', fes: function () { enllacPantalla(id); } },
-        { text: '⇄ Canviar l\'aparell (tele nova…)', fes: function () { afegirPantalla(id); } }
+        { text: IC('recarrega') + 'Reinicia el reproductor', fes: function () { crida('screenCommand', { id: id, type: 'reload' }, { desa: true }).then(function () { toast('Es reiniciarà en menys d\'un minut.', 'ok'); }); } },
+        { text: IC('neteja') + 'Esborra i torna a descarregar els fitxers', fes: function () { crida('screenCommand', { id: id, type: 'clearcache' }, { desa: true }).then(function () { toast('Ordre enviada.', 'ok'); }); } },
+        { text: IC('enllac') + 'Enllaç i codi QR d\'aquesta pantalla', fes: function () { enllacPantalla(id); } },
+        { text: IC('canvia') + 'Canviar l\'aparell (tele nova…)', fes: function () { afegirPantalla(id); } }
       ];
       if (esAdmin) {
-        ops.push({ text: '⟲ Renova l\'enllaç (desvincula l\'aparell actual)', fes: function () {
+        ops.push({ text: IC('recarrega') + 'Renova l\'enllaç (desvincula l\'aparell actual)', fes: function () {
           confirma('Renovar l\'enllaç', 'L\'aparell actual deixarà de funcionar fins que el tornis a vincular. Fes-ho si l\'enllaç ha arribat a qui no toca.', { ok: 'Renova', perill: true }).then(function (si) {
             if (si) crida('renewScreenLink', { id: id }, { desa: true }).then(function (r) { mostraEnllac(p, r.token); });
           });
         } });
-        ops.push({ text: '🗑 Esborra la pantalla', perill: true, fes: function () {
+        ops.push({ text: IC('esborra') + 'Esborra la pantalla', perill: true, fes: function () {
           confirma('Esborrar «' + p.name + '»', 'L\'aparell deixarà de mostrar contingut i tornarà a la pantalla de vinculació. Les llistes no s\'esborren.', { ok: 'Esborra', perill: true }).then(function (si) {
             if (si) crida('deleteScreen', { id: id }, { desa: true }).then(function () { return carrega(); }).then(function () { location.hash = '#pantalles'; toast('Pantalla esborrada', 'ok'); });
           });
@@ -957,9 +957,9 @@
     titol('Llistes');
     var d = S.d;
     var html = '<div class="capcalera"><div><h2>Llistes de contingut</h2><p>Cada llista és un conjunt de fotos, vídeos, textos o webs que es van passant. Una llista es pot mostrar a una o més pantalles.</p></div>' +
-      '<button class="btn primari" data-accio="nova">＋ Nova llista</button></div>';
+      '<button class="btn primari" data-accio="nova">' + IC('mes') + 'Nova llista</button></div>';
     if (!d.playlists.length) {
-      html += '<div class="targeta buit"><div class="gran-ic">☰</div><h3>Encara no hi ha cap llista</h3><p>Crea una llista (per exemple «Activitats del trimestre») i afegeix-hi fotos i vídeos.</p><button class="btn primari" data-accio="nova">＋ Nova llista</button></div>';
+      html += '<div class="targeta buit"><div class="gran-ic">' + IC('llistes') + '</div><h3>Encara no hi ha cap llista</h3><p>Crea una llista (per exemple «Activitats del trimestre») i afegeix-hi fotos i vídeos.</p><button class="btn primari" data-accio="nova">' + IC('mes') + 'Nova llista</button></div>';
     } else {
       html += '<div class="pila">' + d.playlists.map(function (l) {
         var pantalles = d.screens.filter(function (p) { return p.playlists.indexOf(l.id) >= 0; });
@@ -971,8 +971,8 @@
         var actius = l.items.filter(function (it) { return it.on !== false && Pnt.estatHorari(it.schedule, Pnt.horaLocal(araServidor())) === 'actiu'; }).length;
         return '<a class="targeta t-llista' + (l.on === false ? ' apagada' : '') + '" href="#llista/' + l.id + '"><div class="mosaic">' + mosaic + '</div><div class="info">' +
           '<h3><span class="color" style="background:' + esc(l.color) + '"></span>' + esc(l.name) + (l.on === false ? ' <span class="badge error">Aturada</span>' : '') + '</h3>' +
-          '<div class="subtil">' + l.items.length + ' elements · ' + actius + ' actius ara' + (l.schedule ? ' · 🗓 ' + esc(Pnt.resumHorari(l.schedule)) : '') + '</div>' +
-          '<div class="chips">' + (pantalles.length ? pantalles.map(function (p) { return '<span class="chip">▭ ' + esc(p.name) + '</span>'; }).join('') : '<span class="badge avis">No es mostra a cap pantalla</span>') + '</div>' +
+          '<div class="subtil">' + l.items.length + ' elements · ' + actius + ' actius ara' + (l.schedule ? ' · ' + IC('calendari') + esc(Pnt.resumHorari(l.schedule)) : '') + '</div>' +
+          '<div class="chips">' + (pantalles.length ? pantalles.map(function (p) { return '<span class="chip">' + IC('pantalles') + esc(p.name) + '</span>'; }).join('') : '<span class="badge avis">No es mostra a cap pantalla</span>') + '</div>' +
           '</div><span style="font-size:22px;color:var(--text-3)">›</span></a>';
       }).join('') + '</div>';
     }
@@ -980,7 +980,7 @@
     $$('[data-accio=nova]').forEach(function (b) { b.onclick = novaLlista; });
   };
 
-  var COLORS_LLISTA = ['#3b6fd8', '#c8102e', '#1f9d55', '#c27c0e', '#8b4fd1', '#0e9aa7', '#d14f8b', '#5a6272'];
+  var COLORS_LLISTA = ['#821E34', '#FF004E', '#6B625B', '#2D2926', '#A8505F', '#BFB8AF'];
   function novaLlista(cb) {
     obreModal({
       titol: 'Nova llista',
@@ -1015,7 +1015,7 @@
     var html = '<div class="capcalera"><div style="flex:1;min-width:240px"><h2 style="display:flex;align-items:center;gap:10px"><input type="color" data-l="color" value="' + esc(L.color) + '" title="Color de la llista" style="width:34px;height:34px">' +
       '<input type="text" data-l="name" value="' + esc(L.name) + '" maxlength="80" style="font-size:20px;font-weight:750;border-color:transparent;background:transparent;padding-left:4px" aria-label="Nom de la llista"></h2></div>' +
       '<div class="btns"><label class="interruptor" title="Si l\'atures, no es mostra enlloc"><input type="checkbox" data-l="on"' + (L.on !== false ? ' checked' : '') + '> Activa</label>' +
-      '<button class="btn icona" data-accio="mes" aria-label="Més opcions">⋯</button></div></div>';
+      '<button class="btn icona" data-accio="mes" aria-label="Més opcions">' + IC('puntets') + '</button></div></div>';
 
     html += '<div class="targeta pad pila" style="margin-bottom:16px"><div class="fila" style="align-items:start">' +
       '<div class="camp">Es mostra a<div class="chips" style="margin-top:4px">' + (pantalles.length ? pantalles.map(function (p) {
@@ -1026,23 +1026,23 @@
       '<button class="btn petit" data-accio="horari-llista">Canvia</button></div></div></div></div>';
 
     html += '<div class="capcalera" style="margin-bottom:10px"><div><h2 style="font-size:17px">' + L.items.length + ' element' + (L.items.length === 1 ? '' : 's') + '</h2>' +
-      '<p class="subtil">Arrossega ⠿ per canviar l\'ordre. Els apagats o fora de programació no es mostren.</p></div>' +
-      (L.items.length > 1 ? '<button class="btn petit" data-accio="durada-tots">⏱ Durada de totes les fotos</button>' : '') + '</div>';
+      '<p class="subtil">Arrossega ' + IC('agafa') + 'per canviar l\'ordre. Els apagats o fora de programació no es mostren.</p></div>' +
+      (L.items.length > 1 ? '<button class="btn petit" data-accio="durada-tots">' + IC('temps') + 'Durada de totes les fotos</button>' : '') + '</div>';
 
     html += '<div class="items" data-items>' + L.items.map(function (it, i) {
       var estat = Pnt.estatHorari(it.schedule, local);
       var d = it.duration ? duradaText(it.duration) : (it.kind === 'media' && (troba(S.d.media, it.mediaId) || {}).kind === 'video' ? 'fins al final' : it.kind === 'youtube' ? '60 s' : it.kind === 'web' ? '30 s' : 'general');
       return '<div class="item' + (it.on === false ? ' apagat' : '') + (estat === 'caducat' ? ' caducat' : '') + '" data-id="' + it.id + '">' +
-        '<span class="mans" aria-hidden="true">⠿</span><span class="num">' + (i + 1) + '</span>' + miniItem(it) +
-        '<div class="text"><b>' + esc(nomItem(it)) + '</b><div class="meta"><span>' + esc(tipusItem(it)) + '</span><span>· ⏱ ' + d + '</span>' + (it.schedule ? badgeHorari(it.schedule) : '') + '</div></div>' +
+        '<span class="mans" aria-hidden="true">' + IC('agafa') + '</span><span class="num">' + (i + 1) + '</span>' + miniItem(it) +
+        '<div class="text"><b>' + esc(nomItem(it)) + '</b><div class="meta"><span>' + esc(tipusItem(it)) + '</span><span>· ' + IC('temps') + d + '</span>' + (it.schedule ? badgeHorari(it.schedule) : '') + '</div></div>' +
         '<div class="accions"><label class="interruptor" title="' + (it.on === false ? 'Apagat' : 'Encès') + '"><input type="checkbox" data-on' + (it.on !== false ? ' checked' : '') + ' aria-label="Encès"></label>' +
-        '<button class="btn fantasma icona" data-edita aria-label="Edita">✎</button><button class="btn fantasma icona" data-menu aria-label="Més">⋯</button></div></div>';
+        '<button class="btn fantasma icona" data-edita aria-label="Edita">' + IC('edita') + '</button><button class="btn fantasma icona" data-menu aria-label="Més">' + IC('puntets') + '</button></div></div>';
     }).join('') + '</div>';
-    if (!L.items.length) html += '<div class="targeta buit" style="margin-bottom:10px"><div class="gran-ic">＋</div><h3>Llista buida</h3><p>Afegeix-hi fotos, vídeos, un PDF o una presentació exportada del Canva, textos o pàgines web.</p></div>';
+    if (!L.items.length) html += '<div class="targeta buit" style="margin-bottom:10px"><div class="gran-ic">' + IC('mes') + '</div><h3>Llista buida</h3><p>Afegeix-hi fotos, vídeos, un PDF o una presentació exportada del Canva, textos o pàgines web.</p></div>';
 
-    html += '<div class="afegir-barra" data-zona><button class="btn primari" data-afegeix="pujar">⇪ Pujar fitxers</button><button class="btn" data-afegeix="biblioteca">▦ De la biblioteca</button>' +
-      '<button class="btn" data-afegeix="text">Aa Text</button><button class="btn" data-afegeix="web">🌐 Pàgina web</button><button class="btn" data-afegeix="youtube">▶ YouTube</button>' +
-      '<button class="btn" data-afegeix="clock">🕒 Rellotge</button><button class="btn" data-afegeix="countdown">⏳ Compte enrere</button>' +
+    html += '<div class="afegir-barra" data-zona><button class="btn primari" data-afegeix="pujar">' + IC('pujar') + 'Pujar fitxers</button><button class="btn" data-afegeix="biblioteca">' + IC('biblioteca') + 'De la biblioteca</button>' +
+      '<button class="btn" data-afegeix="text">' + IC('text') + 'Text</button><button class="btn" data-afegeix="web">' + IC('web') + 'Pàgina web</button><button class="btn" data-afegeix="youtube">' + IC('play') + 'YouTube</button>' +
+      '<button class="btn" data-afegeix="clock">' + IC('rellotge') + 'Rellotge</button><button class="btn" data-afegeix="countdown">' + IC('compte') + 'Compte enrere</button>' +
       '<span class="molt-subtil" style="align-self:center">o arrossega fitxers aquí</span></div>';
     $('#vista').innerHTML = html;
 
@@ -1067,12 +1067,12 @@
     $('[data-accio=mes]').onclick = function (ev) {
       ev.stopPropagation();
       obreDesplegable(ev.currentTarget, [
-        { text: '⧉ Duplica la llista', fes: function () {
+        { text: IC('duplica') + 'Duplica la llista', fes: function () {
           var c = copia(L); delete c.id; delete c.v; c.name = L.name + ' (còpia)';
           c.items.forEach(function (it) { delete it.id; });
           crida('savePlaylist', { playlist: c }, { desa: true }).then(function (r) { return carrega().then(function () { location.hash = '#llista/' + r.playlist.id; }); });
         } },
-        { text: '🗑 Esborra la llista', perill: true, fes: function () {
+        { text: IC('esborra') + 'Esborra la llista', perill: true, fes: function () {
           confirma('Esborrar «' + L.name + '»', 'Es deixarà de mostrar a totes les pantalles. Les fotos i vídeos es queden a la biblioteca.', { ok: 'Esborra', perill: true }).then(function (si) {
             if (!si) return;
             S.edicio = null;
@@ -1108,12 +1108,12 @@
         ev.stopPropagation();
         var i = L.items.indexOf(it);
         obreDesplegable(ev.currentTarget, [
-          { text: '✎ Edita', fes: function () { $('[data-edita]', row).click(); } },
-          { text: '⧉ Duplica', fes: function () { var c = copia(it); delete c.id; L.items.splice(i + 1, 0, c); canviEdicio(); render(true); } },
-          { text: '↑ Mou amunt', fes: function () { if (i > 0) { L.items.splice(i - 1, 0, L.items.splice(i, 1)[0]); canviEdicio(); render(true); } } },
-          { text: '↓ Mou avall', fes: function () { if (i < L.items.length - 1) { L.items.splice(i + 1, 0, L.items.splice(i, 1)[0]); canviEdicio(); render(true); } } },
-          { text: '⤒ Mou al principi', fes: function () { L.items.unshift(L.items.splice(i, 1)[0]); canviEdicio(); render(true); } },
-          { text: '🗑 Treu de la llista', perill: true, fes: function () { L.items.splice(i, 1); canviEdicio(); render(true); toast('Tret de la llista (el fitxer continua a la biblioteca)', 'ok'); } }
+          { text: IC('edita') + 'Edita', fes: function () { $('[data-edita]', row).click(); } },
+          { text: IC('duplica') + 'Duplica', fes: function () { var c = copia(it); delete c.id; L.items.splice(i + 1, 0, c); canviEdicio(); render(true); } },
+          { text: IC('amunt') + 'Mou amunt', fes: function () { if (i > 0) { L.items.splice(i - 1, 0, L.items.splice(i, 1)[0]); canviEdicio(); render(true); } } },
+          { text: IC('avall') + 'Mou avall', fes: function () { if (i < L.items.length - 1) { L.items.splice(i + 1, 0, L.items.splice(i, 1)[0]); canviEdicio(); render(true); } } },
+          { text: IC('principi') + 'Mou al principi', fes: function () { L.items.unshift(L.items.splice(i, 1)[0]); canviEdicio(); render(true); } },
+          { text: IC('esborra') + 'Treu de la llista', perill: true, fes: function () { L.items.splice(i, 1); canviEdicio(); render(true); toast('Tret de la llista (el fitxer continua a la biblioteca)', 'ok'); } }
         ]);
       };
     });
@@ -1415,8 +1415,8 @@
     var d = S.d;
     var usos = usosMitjans();
     var html = '<div class="capcalera"><div><h2>Biblioteca</h2><p>Totes les fotos i vídeos. Es guarden de manera privada al Drive de l\'escola.</p></div>' +
-      '<button class="btn" data-accio="bustia">📥 Bústia del Drive</button></div>' +
-      '<div class="zona-pujada" data-zona tabindex="0" role="button"><div class="gran-ic">⇪</div><b>Arrossega aquí fotos, vídeos o PDF</b><span class="subtil">o fes clic per triar-los (des del mòbil també pots fer fotos)</span>' +
+      '<button class="btn" data-accio="bustia">' + IC('bustia') + 'Bústia del Drive</button></div>' +
+      '<div class="zona-pujada" data-zona tabindex="0" role="button"><div class="gran-ic">' + IC('pujar') + '</div><b>Arrossega aquí fotos, vídeos o PDF</b><span class="subtil">o fes clic per triar-los (des del mòbil també pots fer fotos)</span>' +
       '<div class="molt-subtil" style="margin-top:6px">Del Canva: Comparteix → Baixa → <b>PDF</b> (cada pàgina serà una diapositiva), <b>PNG</b> o <b>MP4</b> (amb animacions).</div></div>';
     html += '<div class="filtres"><div class="segment">' + [['', 'Tot (' + d.media.length + ')'], ['image', 'Fotos'], ['video', 'Vídeos'], ['nous', 'Sense fer servir']].map(function (f) {
       return '<label><input type="radio" name="fb" value="' + f[0] + '"' + (filtreBib.tipus === f[0] ? ' checked' : '') + '><span>' + f[1] + '</span></label>';
@@ -1457,9 +1457,9 @@
 
   function htmlMitja(m, usos, triat) {
     var th = S.thumbs[m.id];
-    return '<button type="button" class="mitja' + (triat ? ' triat' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? '▶' : '▦') + '</div>' +
-      (m.kind === 'video' ? '<span class="tipus badge" style="background:rgba(0,0,0,.65);color:#fff">▶ ' + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') +
-      (triat !== undefined ? '<span class="marca">' + (triat ? '✓' : '') + '</span>' : '') +
+    return '<button type="button" class="mitja' + (triat ? ' triat' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? IC('play') : IC('biblioteca')) + '</div>' +
+      (m.kind === 'video' ? '<span class="tipus badge" style="background:rgba(0,0,0,.65);color:#fff">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') +
+      (triat !== undefined ? '<span class="marca">' + (triat ? IC('fet', 16) : '') + '</span>' : '') +
       '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + mida(m.size) +
       (usos ? (usos.length ? ' · a ' + usos.length + ' llist' + (usos.length > 1 ? 'es' : 'a') : ' · sense fer servir') : '') + '</span></div></button>';
   }
@@ -1477,8 +1477,8 @@
         '<div class="pila"><label class="camp">Nom<input type="text" data-nom value="' + esc(m.name) + '" maxlength="200"></label>' +
         '<div class="subtil">' + mida(m.size) + (m.w ? ' · ' + m.w + '×' + m.h + ' px' : '') + (m.duration ? ' · ' + duradaText(m.duration) : '') + '<br>Pujat ' + dataHora(m.at) + ' per ' + esc((m.by || '').split('@')[0]) + '</div>' +
         '<div class="camp">Es fa servir a<div class="chips">' + (usos.length ? usos.map(function (l) { return l.id ? '<a href="#llista/' + l.id + '" class="chip" style="text-decoration:none;color:inherit"><span class="color" style="background:' + esc(l.color) + '"></span>' + esc(l.name) + '</a>' : chipLlista(l); }).join('') : '<span class="subtil">Cap llista</span>') + '</div></div>' +
-        '<label class="camp">Afegeix a una llista<select data-afegeix><option value="">Tria una llista…</option>' + S.d.playlists.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('') + '<option value="__nova">＋ Llista nova…</option></select></label></div></div>',
-      peu: '<button class="btn perill esq" data-esborra>🗑 Esborra</button><button class="btn primari" data-tanca>Fet</button>',
+        '<label class="camp">Afegeix a una llista<select data-afegeix><option value="">Tria una llista…</option>' + S.d.playlists.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('') + '<option value="__nova">' + IC('mes') + 'Llista nova…</option></select></label></div></div>',
+      peu: '<button class="btn perill esq" data-esborra>' + IC('esborra') + 'Esborra</button><button class="btn primari" data-tanca>Fet</button>',
       enObrir: function (el) {
         var inp = $('[data-nom]', el);
         inp.onchange = function () {
@@ -1536,7 +1536,7 @@
                 if (!opc.multi) { triats = [id]; resolt = true; tancaModal(); ok(triats); return; }
                 if (i >= 0) triats.splice(i, 1); else triats.push(id);
                 b.classList.toggle('triat', i < 0);
-                $('.marca', b).textContent = i < 0 ? '✓' : '';
+                $('.marca', b).innerHTML = i < 0 ? IC('fet', 16) : '';
                 $('[data-n]', el).textContent = triats.length ? triats.length + ' triat' + (triats.length > 1 ? 's' : '') : '';
                 $('[data-ok]', el).disabled = !triats.length;
               };
@@ -1561,7 +1561,7 @@
       obreModal({
         titol: 'Bústia del Drive',
         cos: '<div class="pila"><p style="margin:0">És una carpeta del Drive on qualsevol persona amb accés pot deixar fotos i vídeos (per exemple des de l\'app del Drive del mòbil) i aquí els importes a la biblioteca.</p>' +
-          '<a class="btn" href="' + esc(r.folderUrl) + '" target="_blank" rel="noopener" style="align-self:flex-start">📁 Obre la carpeta al Drive</a>' +
+          '<a class="btn" href="' + esc(r.folderUrl) + '" target="_blank" rel="noopener" style="align-self:flex-start">' + IC('carpeta') + 'Obre la carpeta al Drive</a>' +
           (llistaAuto ? '<div class="avis-caixa info">Importació automàtica activada: cada 10 minuts els fitxers nous s\'afegeixen a la llista <b>' + esc(llistaAuto.name) + '</b>.</div>' : '<div class="molt-subtil">Un administrador pot activar la importació automàtica a Ajustos.</div>') +
           (fitxers.length ? '<div class="pila" style="gap:6px">' + fitxers.map(function (f) {
             return '<div class="pujada"><span class="nom">' + esc(f.name) + '</span><span class="molt-subtil">' + mida(f.size) + '</span>' + (f.kind ? '' : '<span class="badge avis">No compatible</span>') + '</div>';
@@ -1611,7 +1611,7 @@
       panellPujades = document.createElement('div');
       panellPujades.className = 'targeta pad';
       panellPujades.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:90;width:min(420px,calc(100% - 32px));max-height:50vh;overflow:auto;box-shadow:var(--ombra-gran)';
-      panellPujades.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Pujant fitxers</b><button class="btn fantasma icona" aria-label="Amaga">✕</button></div><div class="pujades" style="margin:0"></div>';
+      panellPujades.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Pujant fitxers</b><button class="btn fantasma icona" aria-label="Amaga">' + IC('tanca') + '</button></div><div class="pujades" style="margin:0"></div>';
       $('button', panellPujades).onclick = function () { if (!pujadesActives) { panellPujades.remove(); panellPujades = null; } else panellPujades.style.display = 'none'; };
       document.body.appendChild(panellPujades);
       if (window.innerWidth <= 860) panellPujades.style.bottom = '78px';
@@ -1624,7 +1624,7 @@
     return {
       estat: function (t, pct) { $('[data-e]', f).textContent = t; if (pct != null) $('.barra-progres > div', f).style.width = pct + '%'; },
       fet: function () { $('[data-e]', f).textContent = '✓ Fet'; $('[data-e]', f).style.color = 'var(--ok)'; $('.barra-progres > div', f).style.width = '100%'; },
-      error: function (t) { $('[data-e]', f).textContent = '✕ ' + t; $('[data-e]', f).style.color = 'var(--error)'; f.title = t; }
+      error: function (t) { $('[data-e]', f).innerHTML = IC('tanca') + t; $('[data-e]', f).style.color = 'var(--error)'; f.title = t; }
     };
   }
 
@@ -1799,12 +1799,12 @@
     var av = actius(d.alerts);
     var passats = d.alerts.filter(function (a) { return av.indexOf(a) < 0; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 15);
     var html = '<div class="capcalera"><div><h2>Avisos</h2><p>Missatges que passen per davant de tot el contingut: simulacres, canvis d\'última hora, benvingudes…</p></div></div>' +
-      '<button class="boto-urgent" data-accio="nou" style="max-width:520px"><span class="gran-ic">⚠</span><span><b>Nou avís</b>Es veurà a les pantalles en menys d\'un minut</span></button>';
+      '<button class="boto-urgent" data-accio="nou" style="max-width:520px"><span class="gran-ic">' + IC('alerta') + '</span><span><b>Nou avís</b>Es veurà a les pantalles en menys d\'un minut</span></button>';
     html += '<div class="seccio"><h3>Actius ara (' + av.length + ')</h3>' + (av.length ? '<div class="pila">' + av.map(htmlAvis).join('') + '</div>' : '<div class="targeta pad subtil">Cap avís actiu.</div>') + '</div>';
     if (passats.length) html += '<div class="seccio"><h3>Recents (aturats o caducats)</h3><div class="pila">' + passats.map(htmlAvis).join('') + '</div></div>';
 
     html += '<div class="seccio"><h3>Cinta de missatges</h3><div class="targeta pad pila"><p class="subtil" style="margin:0">Frases curtes que passen contínuament per la part de baix de les pantalles que la tinguin activada (configuració de cada pantalla).</p>' +
-      '<div class="pila" data-cinta style="gap:8px"></div><div class="btns"><button class="btn" data-accio="afegir-cinta">＋ Afegeix un missatge</button></div></div></div>';
+      '<div class="pila" data-cinta style="gap:8px"></div><div class="btns"><button class="btn" data-accio="afegir-cinta">' + IC('mes') + 'Afegeix un missatge</button></div></div></div>';
     $('#vista').innerHTML = html;
     $('[data-accio=nou]').onclick = function () { editaAvis(null); };
     activaAvisos($('#vista'));
@@ -1818,10 +1818,10 @@
     return '<div class="targeta t-avis" style="border-left-color:' + esc(a.color) + (actiu ? '' : ';opacity:.7') + '"><div class="cos">' +
       '<h4>' + esc(a.title || '(sense títol)') + '</h4>' + (a.text ? '<p>' + esc(a.text) + '</p>' : '') +
       '<div class="chips"><span class="badge ' + (actiu ? 'error' : '') + '">' + (actiu ? '● Es mostra ara' : 'Aturat') + '</span><span class="badge">' + (a.mode === 'banner' ? 'Banda superior' : 'Pantalla completa') + '</span>' +
-      '<span class="badge">▭ ' + esc(pantalles) + '</span><span class="badge">⏱ ' + esc(fins) + '</span></div>' +
+      '<span class="badge">' + IC('pantalles') + esc(pantalles) + '</span><span class="badge">' + IC('temps') + esc(fins) + '</span></div>' +
       '<div class="molt-subtil" style="margin-top:6px">Publicat ' + dataHora(a.at) + ' per ' + esc((a.by || '').split('@')[0]) + '</div></div>' +
-      '<div class="btns" style="flex-direction:column;align-items:stretch">' + (actiu ? '<button class="btn perill-ple petit" data-atura="' + a.id + '">■ Atura</button>' : '<button class="btn petit" data-reactiva="' + a.id + '">▶ Torna a mostrar</button>') +
-      '<button class="btn petit" data-edita-avis="' + a.id + '">✎ Edita</button>' + (actiu ? '' : '<button class="btn petit fantasma" data-esborra-avis="' + a.id + '">🗑</button>') + '</div></div>';
+      '<div class="btns" style="flex-direction:column;align-items:stretch">' + (actiu ? '<button class="btn perill-ple petit" data-atura="' + a.id + '">' + IC('atura') + 'Atura</button>' : '<button class="btn petit" data-reactiva="' + a.id + '">' + IC('play') + 'Torna a mostrar</button>') +
+      '<button class="btn petit" data-edita-avis="' + a.id + '">' + IC('edita') + 'Edita</button>' + (actiu ? '' : '<button class="btn petit fantasma" data-esborra-avis="' + a.id + '">' + IC('esborra') + '</button>') + '</div></div>';
   }
   function activaAvisos(cont) {
     $$('[data-atura]', cont).forEach(function (b) {
@@ -1858,7 +1858,7 @@
         '<label class="camp">Quant de temps<select data-durada><option value="">Fins que l\'aturi</option><option value="15">15 minuts</option><option value="30">30 minuts</option><option value="60">1 hora</option><option value="120">2 hores</option><option value="dia">Fins al final del dia</option><option value="data"' + (a.until ? ' selected' : '') + '>Fins a una data i hora…</option></select></label>' +
         '<input type="datetime-local" data-fins' + (a.until ? '' : ' hidden') + ' value="' + (a.until ? localIso(new Date(a.until)) : '') + '">' +
         '</div><div class="pila"><div class="camp">Així es veurà<div class="previa-caixa" data-previa-avis style="font-family:system-ui"></div></div></div></div>',
-      peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn perill-ple" data-ok>' + (nou ? '⚠ Publica l\'avís' : 'Desa') + '</button>',
+      peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn perill-ple" data-ok>' + (nou ? IC('alerta') + 'Publica l\'avís' : 'Desa') + '</button>',
       noTancarFora: true,
       enObrir: function (el) {
         var caixa = $('[data-previa-avis]', el);
@@ -1903,7 +1903,7 @@
           crida('saveAlert', { alert: r }, { desa: true }).then(function () { return carrega(); }).then(function () {
             tancaModal(); toast(nou ? 'Avís publicat. Apareixerà a les pantalles en menys d\'un minut.' : 'Avís desat', 'ok', 5000);
             if (ruta().sec !== 'avisos') location.hash = '#avisos'; else render(true);
-          }, function () { b.disabled = false; b.textContent = nou ? '⚠ Publica l\'avís' : 'Desa'; });
+          }, function () { b.disabled = false; b.innerHTML = nou ? IC('alerta') + 'Publica l\'avís' : 'Desa'; });
         };
       }
     });
@@ -1920,7 +1920,7 @@
       cont.innerHTML = cinta.length ? cinta.map(function (t, i) {
         return '<div class="item" style="padding:6px 8px"><label class="interruptor"><input type="checkbox" data-on="' + i + '"' + (t.on !== false ? ' checked' : '') + ' aria-label="Actiu"></label>' +
           '<input type="text" data-text="' + i + '" value="' + esc(t.text) + '" maxlength="300" placeholder="Escriu el missatge…" style="flex:1">' +
-          '<button class="btn fantasma icona" data-treu="' + i + '" aria-label="Esborra">✕</button></div>';
+          '<button class="btn fantasma icona" data-treu="' + i + '" aria-label="Esborra">' + IC('tanca') + '</button></div>';
       }).join('') : '<div class="subtil">Encara no hi ha missatges. Exemple: «Dimecres 12: jornada de portes obertes de 17 a 19 h».</div>';
       $$('[data-on]', cont).forEach(function (c) { c.onchange = function () { cinta[+c.dataset.on].on = c.checked; desa(); }; });
       $$('[data-text]', cont).forEach(function (c) { c.oninput = function () { cinta[+c.dataset.text].text = c.value; desa(); }; });
@@ -1948,7 +1948,6 @@
     var d = S.d, s = d.settings;
     var admin = S.user && S.user.role === 'admin';
     var dis = admin ? '' : ' disabled';
-    var tema = ls('pnt_tema') || 'auto';
     var html = '<div class="capcalera"><div><h2>Ajustos</h2>' + (admin ? '' : '<p>Només els administradors poden canviar els ajustos generals.</p>') + '</div></div>';
     html += '<div class="fila" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">';
     html += '<div class="targeta pad pila" data-form-ajustos><h3 style="margin:0">General</h3>' +
@@ -1970,9 +1969,9 @@
         return '<tr><td>' + (admin ? '<input type="email" data-u-email="' + i + '" value="' + esc(u.email) + '"' + (jo ? ' disabled' : '') + '>' : esc(u.email)) + '</td>' +
           '<td>' + (admin ? '<input type="text" data-u-nom="' + i + '" value="' + esc(u.name || '') + '" placeholder="Nom">' : esc(u.name || '')) + '</td>' +
           '<td>' + (admin ? '<select data-u-rol="' + i + '"' + (jo ? ' disabled' : '') + '><option value="editor"' + (u.role !== 'admin' ? ' selected' : '') + '>Editor/a</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Administrador/a</option></select>' : (u.role === 'admin' ? 'Administrador/a' : 'Editor/a')) + '</td>' +
-          (admin ? '<td>' + (jo ? '<span class="molt-subtil">Tu</span>' : '<button class="btn fantasma icona" data-u-treu="' + i + '" aria-label="Treu">✕</button>') + '</td>' : '') + '</tr>';
+          (admin ? '<td>' + (jo ? '<span class="molt-subtil">Tu</span>' : '<button class="btn fantasma icona" data-u-treu="' + i + '" aria-label="Treu">' + IC('tanca') + '</button>') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div>' +
-      (admin ? '<div class="btns"><button class="btn" data-u-afegeix>＋ Afegeix una persona</button><button class="btn primari" data-u-desa hidden>Desa les persones</button></div>' : '') + '</div>';
+      (admin ? '<div class="btns"><button class="btn" data-u-afegeix>' + IC('mes') + 'Afegeix una persona</button><button class="btn primari" data-u-desa hidden>Desa les persones</button></div>' : '') + '</div>';
     html += '</div>';
 
     // Servei (actualitzacions)
@@ -1981,7 +1980,7 @@
         '<div>Versió del servei: <b>' + esc(d.version) + '</b>' + (serveiAntic() ? ' · <span class="badge error">cal actualitzar (el panell espera la ' + VERSIO_SERVEI + ')</span>' : ' · <span class="badge ok">al dia</span>') + '</div>' +
         '<div class="subtil" data-servei-estat>Comprovant…</div>' +
         '<p class="subtil" style="margin:0">El servei s\'actualitza sol des de GitHub cada vegada que es publica un canvi. Aquests botons només calen si alguna cosa no ha anat bé.</p>' +
-        '<div class="btns"><button class="btn primari" data-servei-act>↻ Actualitza ara</button><button class="btn" data-servei-enrere>⟲ Torna a la versió anterior</button></div></div></div>';
+        '<div class="btns"><button class="btn primari" data-servei-act>' + IC('recarrega') + 'Actualitza ara</button><button class="btn" data-servei-enrere>' + IC('recarrega') + 'Torna a la versió anterior</button></div></div></div>';
     }
 
     // Instal·lar pantalles
@@ -1993,9 +1992,8 @@
       '<div class="qr" data-qr-url><span class="roda"></span></div></div></div></div>';
 
     // Aparença i sessió
-    html += '<div class="seccio"><h3>Aquest aparell</h3><div class="targeta pad pila"><div class="camp">Aparença del panell<div class="segment">' +
-      [['auto', 'Automàtica'], ['light', 'Clara'], ['dark', 'Fosca']].map(function (t) { return '<label><input type="radio" name="tema" value="' + t[0] + '"' + (tema === t[0] ? ' checked' : '') + '><span>' + t[1] + '</span></label>'; }).join('') + '</div></div>' +
-      '<div class="btns"><a class="btn" href="#registre">☰ Registre d\'activitat</a><button class="btn" data-surt>⎋ Tanca la sessió</button></div>' +
+    html += '<div class="seccio"><h3>Aquest aparell</h3><div class="targeta pad pila">' +
+      '<div class="btns"><a class="btn" href="#registre">' + IC('llistes') + 'Registre d\'activitat</a><button class="btn" data-surt>' + IC('surt') + 'Tanca la sessió</button></div>' +
       '<div class="molt-subtil">Pantalles · versió ' + esc(d.version) + ' · ' + esc(S.user ? S.user.email : '') + '</div></div></div>';
     $('#vista').innerHTML = html;
 
@@ -2066,7 +2064,7 @@
         crida('updateService', { force: true }, { desa: true, timeout: 120000 }).then(function (r) {
           toast(r.missatge, 'ok', 6000);
           setTimeout(function () { location.reload(); }, 2500);
-        }, function () { b.disabled = false; b.textContent = '↻ Actualitza ara'; });
+        }, function () { b.disabled = false; b.innerHTML = IC('recarrega') + 'Actualitza ara'; });
       };
       $('[data-servei-enrere]').onclick = function () {
         confirma('Tornar a la versió anterior', 'El servei tornarà a la versió d\'abans de l\'última actualització. Fes-ho només si alguna cosa ha deixat de funcionar.', { ok: 'Torna-hi' }).then(function (si) {
@@ -2076,7 +2074,6 @@
     }
     $('[data-copia-url]').onclick = function () { var u = urlReproductor(); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('Copiat', 'ok'); }, function () {}); };
     dibuixaQr($('[data-qr-url]'), urlReproductor());
-    $$('input[name=tema]').forEach(function (r) { r.onchange = function () { ls('pnt_tema', r.value); aplicaTema(); }; });
     $('[data-surt]').onclick = function () { surt(false); };
   };
 
@@ -2086,16 +2083,12 @@
       '<div class="targeta pad"><ul class="registre">' + (S.d.log || []).map(htmlRegistre).join('') + '</ul></div>';
   };
 
-  function aplicaTema() {
-    var t = ls('pnt_tema') || 'auto';
-    if (t === 'auto') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', t);
-  }
+
 
   /* ------------------------------------------------------------------
    *  Arrencada
    * ---------------------------------------------------------------- */
-  aplicaTema();
+  $$('[data-ic]').forEach(function (e) { e.innerHTML = IC(e.dataset.ic, 20); });
   configuraLogin();
   if (S.session && Pnt.apiConfigurada()) entra(); else mostraLogin();
 

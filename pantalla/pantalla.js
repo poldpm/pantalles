@@ -232,7 +232,9 @@
     var necessaris = Object.keys(config.media);
     // Primer els fitxers de les diapositives que toquen ara.
     var araIds = elegibles(true).map(function (it) { return it.mediaId; });
-    necessaris.sort(function (a, b) { return (araIds.indexOf(a) < 0) - (araIds.indexOf(b) < 0); });
+    var logos = [config.settings.logoMediaId, config.settings.logoNegMediaId];
+    var prio = function (id) { return logos.indexOf(id) >= 0 ? 0 : araIds.indexOf(id) >= 0 ? 1 : 2; };
+    necessaris.sort(function (a, b) { return prio(a) - prio(b); });
     var falten = necessaris.filter(function (id) { return !presents[id]; });
     var cadena = Promise.resolve();
     falten.forEach(function (id) {
@@ -241,6 +243,7 @@
         return Pnt.descarregaMitja(id, config.media[id], cred).then(function (blob) {
           return mitjans.set(id, blob).then(function () {
             presents[id] = true;
+            if (logos.indexOf(id) >= 0) refrescaLogos();
             if (mode === 'buit' || mode === 'inici') seguent();
           });
         }, function (e) { darrerError = 'Descàrrega: ' + e.message; });
@@ -732,12 +735,7 @@
     if (abans !== 'buit' || !elSistema) {
       var s = config.settings;
       var el = pantallaSistema('<div class="tall"></div><div class="marca"></div><div class="hora-gran"></div><div class="data"></div>');
-      carregaLogos(function () {
-        var m = el.querySelector('.marca'), u = logoUrl(true);
-        if (!m) return;
-        m.innerHTML = u ? '<img class="logo" alt="">' : '<div class="nom-escola">' + Pnt.escapa(s.schoolName || 'Vedruna Escorial Vic') + '</div>';
-        if (u) m.querySelector('img').src = u;
-      });
+      pintaMarcaBuit(el);
       var pinta = function () {
         var l = local();
         el.querySelector('.hora-gran').textContent = l.time;
@@ -746,6 +744,25 @@
       pinta(); ivSistema = setInterval(pinta, 5000);
     }
     temporitzador = setTimeout(seguent, 15000);
+  }
+
+  function pintaMarcaBuit(el) {
+    carregaLogos(function () {
+      var m = el.querySelector('.marca'), u = logoUrl(true);
+      if (!m) return;
+      if (u && m.dataset.url === u) return;
+      m.dataset.url = u || '';
+      m.innerHTML = u ? '<img class="logo" alt="">' : '<div class="nom-escola">' + Pnt.escapa((config && config.settings.schoolName) || 'Vedruna Escorial Vic') + '</div>';
+      if (u) m.querySelector('img').src = u;
+    });
+  }
+  /** Quan arriba un logotip nou, es posa allà on calgui sense esperar. */
+  function refrescaLogos() {
+    if (mode === 'buit' && elSistema) pintaMarcaBuit(elSistema);
+    signaturaAvis = ''; pintaAvisos();
+    if (actual && actual.item && actual.capa && (actual.item.kind === 'text' || actual.item.kind === 'clock' || actual.item.kind === 'countdown')) {
+      clearTimeout(temporitzador); mostra(actual.item, elegibles().length);
+    }
   }
 
   /** Fora de l'horari de la pantalla: negre (estalvia la tele i evita marques). */
