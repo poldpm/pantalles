@@ -196,6 +196,7 @@ function accioEsborraMitja_(req, u) {
       if (l.items.length !== abans) l.v = (l.v || 0) + 1;
     });
     if (bd.settings.logoMediaId === req.id) bd.settings.logoMediaId = '';
+    if (bd.settings.logoNegMediaId === req.id) bd.settings.logoNegMediaId = '';
     registra_(bd, u.email, 'Ha esborrat «' + m.name + '» de la biblioteca');
   });
   if (driveId) { try { DriveApp.getFileById(driveId).setTrashed(true); } catch (e) { /* ja no hi era */ } }

@@ -136,7 +136,7 @@
     mode = 'vinculacio';
     Pnt.api('pairStart', { info: infoAparell() }).then(function (r) {
       pantallaSistema(
-        '<h1>Pantalla nova</h1>' +
+        '<div class="tall"></div><div class="etiqueta">Pantalla nova</div>' +
         '<p>Per vincular-la, entra al <b>panell de Pantalles</b> → <b>Afegir pantalla</b> i escriu aquest codi:</p>' +
         '<div class="codi">' + r.code.substr(0, 3) + ' ' + r.code.substr(3) + '</div>' +
         '<p class="petit">El codi canvia cada 30 minuts · ' + Pnt.escapa(location.host) + '</p>');
@@ -302,7 +302,7 @@
   function identifica() {
     var d = document.createElement('div');
     d.className = 'identifica';
-    d.innerHTML = '<div class="nom">' + Pnt.escapa(config ? config.screen.name : 'Pantalla') + '</div>' +
+    d.innerHTML = '<div class="etiqueta">Aquesta pantalla és</div><div class="nom">' + Pnt.escapa(config ? config.screen.name : 'Pantalla') + '</div>' +
       '<div class="lloc">' + Pnt.escapa(config ? config.screen.location || '' : '') + '</div>' +
       '<div class="det">' + window.innerWidth + '×' + window.innerHeight + ' · v' + VERSIO + '</div>';
     sup.appendChild(d);
@@ -331,7 +331,7 @@
     pintaSuperposicions();
   }
 
-  var elRellotge = null, elLogo = null, elCinta = null, elProgres = null, elAvis = null, ivRellotge = null;
+  var elRellotge = null, elCinta = null, elProgres = null, elAvis = null, ivRellotge = null;
   function treu(e) { if (e && e.parentNode) e.parentNode.removeChild(e); return null; }
 
   function pintaSuperposicions() {
@@ -346,21 +346,12 @@
         if (!elRellotge) return;
         var l = local();
         elRellotge.querySelector('.h').textContent = l.time;
-        elRellotge.querySelector('.d').textContent = Pnt.NOMS_DIES_LLARGS[l.dow] + ' ' + l.d + ' ' + Pnt.NOMS_MESOS[l.m - 1];
+        elRellotge.querySelector('.d').textContent = Pnt.dataLlarga(l);
       };
       pinta(); ivRellotge = setInterval(pinta, 5000);
     } else if (!o.clock && elRellotge) { elRellotge = treu(elRellotge); clearInterval(ivRellotge); }
-    // Logotip
-    var idLogo = config.settings.logoMediaId;
-    elLogo = treu(elLogo);
-    if (o.logo && idLogo) {
-      urlMitja(idLogo, function (u) {
-        if (!u) return;
-        elLogo = document.createElement('img');
-        elLogo.className = 'sup-logo'; elLogo.src = u; elLogo.alt = '';
-        sup.appendChild(elLogo);
-      });
-    }
+    // Logotips: es preparen perquè les diapositives els tinguin a punt
+    carregaLogos(function () {});
     // Barra de progrés
     if (o.progress && !elProgres) { elProgres = document.createElement('div'); elProgres.className = 'sup-progres'; sup.appendChild(elProgres); }
     else if (!o.progress) elProgres = treu(elProgres);
@@ -426,11 +417,19 @@
       var a = llista[idxAvis % llista.length];
       idxAvis++;
       var nou = document.createElement('div');
-      nou.className = a.mode === 'full' ? 'avis-complet' : 'avis-banda';
-      nou.style.background = a.color || '#c8102e';
-      var cos = (a.title ? '<div class="titol">' + Pnt.escapa(a.title) + '</div>' : '') +
-        (a.text ? '<div class="text">' + Pnt.escapa(a.text).replace(/\n/g, '<br>') + '</div>' : '');
-      nou.innerHTML = '<div class="icona">⚠</div>' + (a.mode === 'full' ? cos : '<div>' + cos + '</div>');
+      var tema = a.tema === 'info' || a.tema === 'neutre' ? a.tema : 'urgent';
+      var etiqueta = a.label || (tema === 'urgent' ? 'Avís urgent' : 'Avís');
+      nou.className = (a.mode === 'full' ? 'avis-complet' : 'avis-banda') + ' tema-' + tema;
+      var titol = a.title ? '<div class="titol">' + Pnt.escapa(a.title) + '</div>' : '';
+      var text = a.text ? '<div class="text">' + Pnt.escapa(a.text).replace(/\n/g, '<br>') + '</div>' : '';
+      if (a.mode === 'full') {
+        nou.innerHTML = '<div class="tall"></div><div class="etiqueta">' + Pnt.escapa(etiqueta) + '</div>' + titol +
+          (titol && text ? '<div class="ratlla"></div>' : '') + text + '<div class="logo-avis"></div>';
+        var lg = logoUrl(tema !== 'info');
+        $logoAvis(nou.querySelector('.logo-avis'), lg);
+      } else {
+        nou.innerHTML = '<div class="etiqueta">' + Pnt.escapa(etiqueta) + '</div><div class="cos">' + titol + text + '</div>';
+      }
       treu(elAvis);
       elAvis = nou;
       sup.appendChild(nou);
@@ -484,6 +483,46 @@
     if (it.kind === 'youtube') return 60;
     if (it.kind === 'web') return 30;
     return config.screen.duration || config.settings.defaultDuration || 10;
+  }
+
+  /* ---------- Logotips (color i negatiu) ---------- */
+  function idsLogos() {
+    var s = config ? config.settings : {};
+    return [s.logoMediaId, s.logoNegMediaId].filter(function (x) { return x && config.media[x]; });
+  }
+  function carregaLogos(cb) {
+    var ids = idsLogos(), queden = ids.length;
+    if (!queden) return cb();
+    ids.forEach(function (id) { urlMitja(id, function () { if (!--queden) cb(); }); });
+  }
+  /** negatiu=true → per a fons foscos (granat, fotos). Si només n'hi ha un, es fa servir aquell. */
+  function logoUrl(negatiu) {
+    if (!config) return null;
+    var s = config.settings;
+    var neg = s.logoNegMediaId && urls[s.logoNegMediaId], col = s.logoMediaId && urls[s.logoMediaId];
+    return negatiu ? (neg || null) : (col || null);
+  }
+  function $logoAvis(cont, u) {
+    if (!cont) return;
+    cont.innerHTML = u ? '<img alt="">' : '<div class="nom">' + Pnt.escapa((config && config.settings.schoolName) || 'Vedruna Escorial Vic') + '</div>';
+    if (u) cont.querySelector('img').src = u;
+  }
+  function ctxDiapo() {
+    return {
+      ara: ara,
+      urlMitja: function (id) { return urls[id] || null; },
+      logo: { color: logoUrl(false), neg: logoUrl(true) },
+      escola: (config && config.settings.schoolName) || 'Vedruna Escorial Vic'
+    };
+  }
+  /** Peu de foto corporatiu i logotip sobre fotos i vídeos. */
+  function decoraMitja(capa, item) {
+    if (item.caption) capa.appendChild(Pnt.diapo.peuFoto(item.caption));
+    var o = config.screen.overlays || {};
+    if (o.logo) {
+      var u = logoUrl(true);
+      if (u) { var i = document.createElement('img'); i.className = 'logo-foto'; i.alt = ''; i.src = u; capa.appendChild(i); }
+    }
   }
 
   function urlMitja(id, cb) {
@@ -589,6 +628,7 @@
             img.src = u;
             if (item.kenburns) { capa.classList.add('kenburns'); capa.style.setProperty('--durada', (d || 10) + 's'); }
             capa.appendChild(img);
+            decoraMitja(capa, item);
           } else {
             var v = document.createElement('video');
             v.className = 'mitja';
@@ -600,6 +640,7 @@
             v.onerror = function () { ko(new Error('vídeo no compatible')); };
             v.src = u;
             capa.appendChild(v);
+            decoraMitja(capa, item);
             v.load();
           }
         });
@@ -622,15 +663,20 @@
         capa.appendChild(f);
         contingut.appendChild(capa); // s'ha de carregar dins el document
       } else {
-        var ctx = { ara: ara, urlMitja: function (id) { return urls[id] || null; } };
         var bgId = item.text && item.text.bgMediaId;
         var fes = function () {
-          var n = Pnt.diapo.crea(item, ctx);
+          var n = Pnt.diapo.crea(item, ctxDiapo());
           if (!n) return ko(new Error('tipus desconegut'));
           capa.appendChild(n);
-          ok();
+          var imgs = n.querySelectorAll('img');
+          if (!imgs.length) return ok();
+          var queden = imgs.length;
+          for (var i = 0; i < imgs.length; i++) {
+            if (imgs[i].complete) { if (!--queden) ok(); }
+            else imgs[i].onload = imgs[i].onerror = function () { if (!--queden) ok(); };
+          }
         };
-        if (bgId) urlMitja(bgId, fes); else fes();
+        carregaLogos(function () { if (bgId) urlMitja(bgId, fes); else fes(); });
       }
     });
   }
@@ -685,13 +731,17 @@
     aturaTot();
     if (abans !== 'buit' || !elSistema) {
       var s = config.settings;
-      var el = pantallaSistema((s.logoMediaId ? '<img class="logo" alt="">' : '') +
-        '<h1>' + Pnt.escapa(s.schoolName || '') + '</h1><div class="hora-gran"></div><p class="data"></p>');
-      if (s.logoMediaId) urlMitja(s.logoMediaId, function (u) { var i = el.querySelector('.logo'); if (u && i) i.src = u; else treu(i); });
+      var el = pantallaSistema('<div class="tall"></div><div class="marca"></div><div class="hora-gran"></div><div class="data"></div>');
+      carregaLogos(function () {
+        var m = el.querySelector('.marca'), u = logoUrl(true);
+        if (!m) return;
+        m.innerHTML = u ? '<img class="logo" alt="">' : '<div class="nom-escola">' + Pnt.escapa(s.schoolName || 'Vedruna Escorial Vic') + '</div>';
+        if (u) m.querySelector('img').src = u;
+      });
       var pinta = function () {
         var l = local();
         el.querySelector('.hora-gran').textContent = l.time;
-        el.querySelector('.data').textContent = Pnt.NOMS_DIES_LLARGS[l.dow] + ', ' + l.d + ' de ' + Pnt.NOMS_MESOS[l.m - 1];
+        el.querySelector('.data').textContent = Pnt.dataLlarga(l);
       };
       pinta(); ivSistema = setInterval(pinta, 5000);
     }

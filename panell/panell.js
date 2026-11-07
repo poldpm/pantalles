@@ -79,7 +79,8 @@
     thumbs: {},
     rev: null,
     desfas: 0,
-    edicio: null      // llista que s'està editant
+    edicio: null,     // llista que s'està editant
+    logos: {}         // url dels logotips { color, neg }
   };
   try { S.user = JSON.parse(ls('pnt_user') || 'null'); } catch (e) { S.user = null; }
 
@@ -131,8 +132,45 @@
   function carrega() {
     return crida('state', {}).then(function (r) {
       aplicaEstat(r);
-      return miniaturesQueFalten().then(function () { return r; });
+      return Promise.all([miniaturesQueFalten(), carregaLogos()]).then(function () { return r; });
     });
+  }
+
+  /* Logotips: es descarreguen sencers (amb transparència) i es guarden al navegador */
+  var logosCarregats = {};
+  function carregaLogos() {
+    if (!S.d) return Promise.resolve();
+    var s = S.d.settings;
+    var feines = [['color', s.logoMediaId], ['neg', s.logoNegMediaId]].map(function (x) {
+      var tipus = x[0], id = x[1];
+      if (!id) { S.logos[tipus] = null; return Promise.resolve(); }
+      if (logosCarregats[tipus] === id && S.logos[tipus]) return Promise.resolve();
+      var desat = ls('pnt_logo_' + tipus);
+      if (desat && desat.indexOf(id + '|') === 0) { S.logos[tipus] = desat.substr(id.length + 1); logosCarregats[tipus] = id; return Promise.resolve(); }
+      var m = troba(S.d.media, id);
+      if (!m) return Promise.resolve();
+      return Pnt.descarregaMitja(id, m, { session: S.session }).then(function (blob) {
+        return new Promise(function (ok) {
+          var lector = new FileReader();
+          lector.onload = function () {
+            S.logos[tipus] = lector.result; logosCarregats[tipus] = id;
+            if (lector.result.length < 400000) ls('pnt_logo_' + tipus, id + '|' + lector.result);
+            ok();
+          };
+          lector.onerror = function () { ok(); };
+          lector.readAsDataURL(blob);
+        });
+      }, function () {});
+    });
+    return Promise.all(feines).then(pintaMarca);
+  }
+  function pintaMarca() {
+    var a = $('#menu-marca');
+    if (a) {
+      a.innerHTML = S.logos.neg ? '<img class="logo-menu" alt="Vedruna Escorial Vic"><span class="sub-marca">Pantalles</span>' :
+        '<span class="nom-marca">' + esc((S.d && S.d.settings.schoolName) || 'Vedruna Escorial Vic') + '</span><span class="sub-marca">Pantalles</span>';
+      if (S.logos.neg) $('img', a).src = S.logos.neg;
+    }
   }
   function aplicaEstat(r) {
     S.desfas = r.serverTime - Date.now();
@@ -141,7 +179,6 @@
     S.rev = r.rev;
     S.user = r.user;
     ls('pnt_user', JSON.stringify(r.user));
-    document.documentElement.style.setProperty('--accent-escola', r.settings.accent);
   }
 
   /* Refresc periòdic: l'estat de les pantalles i els canvis d'altres persones */
@@ -262,6 +299,8 @@
    *  Entrada / sortida
    * ---------------------------------------------------------------- */
   function mostraLogin() {
+    var desat = ls('pnt_logo_neg'), img = $('#logo-login');
+    if (desat && img) { img.src = desat.substr(desat.indexOf('|') + 1); img.hidden = false; }
     $('#app').hidden = true;
     $('#login').hidden = false;
     $('#carregant').classList.add('amagat');
@@ -380,7 +419,9 @@
     if (avisosActius && !badge) aAvisos.insertAdjacentHTML('beforeend', '<span class="badge accent">' + avisosActius + '</span>');
     else if (badge) { if (avisosActius) badge.textContent = avisosActius; else badge.remove(); }
     var fn = VISTES[r.sec] || VISTES.inici;
+    registreDiapos = {};
     fn(r.id);
+    omplirDiapos($('#vista'));
     if (mantenirScroll) window.scrollTo(0, scroll); else window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', function () { tancaModal(); render(); });
@@ -431,6 +472,7 @@
     if (it.kind === 'media') { var m = troba(S.d.media, it.mediaId); return m ? NOMS_TIPUS[m.kind] : 'Fitxer'; }
     return NOMS_TIPUS[it.kind];
   }
+  var comptadorDiapos = 0;
   function miniItem(it, classe) {
     if (it.kind === 'media') {
       var m = troba(S.d.media, it.mediaId);
@@ -439,12 +481,9 @@
         (m && m.kind === 'video' ? '<span class="tipus">▶ ' + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') + '</div>';
     }
     if (it.kind === 'text' || it.kind === 'clock' || it.kind === 'countdown') {
-      var t = it.text || {};
-      var bg = t.bg2 ? 'linear-gradient(135deg,' + t.bg + ',' + t.bg2 + ')' : t.bg;
-      var th2 = t.bgMediaId ? S.thumbs[t.bgMediaId] : null;
-      var fons = th2 ? 'linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.55)),url(\'' + th2 + '\') center/cover' : bg;
-      return '<div class="miniatura ' + (classe || '') + '" style="background:' + fons + ';color:' + (t.fg || '#fff') + ';font-size:11px;font-weight:700;padding:3px;text-align:center;line-height:1.1;overflow:hidden">' +
-        (it.kind === 'clock' ? '<span style="font-size:17px">' + ICONES.clock + '</span>' : it.kind === 'countdown' ? '<span>⏳ ' + esc((t.title || '').substr(0, 22)) + '</span>' : esc((t.title || t.body || 'Text').substr(0, 40))) + '</div>';
+      var clau = 'd' + (++comptadorDiapos);
+      registreDiapos[clau] = it;
+      return '<div class="miniatura diapo ' + (classe || '') + '" data-diapo="' + clau + '"></div>';
     }
     if (it.kind === 'youtube') return '<div class="miniatura ' + (classe || '') + '" style="background:#e62117;color:#fff">▶</div>';
     return '<div class="miniatura ' + (classe || '') + '">' + (ICONES[it.kind] || '?') + '</div>';
@@ -543,6 +582,20 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
+  var VERSIO_SERVEI = '1.1.0';
+  function serveiAntic() {
+    var v = (S.d && S.d.version) || '0';
+    var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
+    for (var i = 0; i < 3; i++) { if ((a[i] || 0) !== b[i]) return (a[i] || 0) < b[i]; }
+    return false;
+  }
+  function htmlAvisServei() {
+    if (!serveiAntic()) return '';
+    return '<div class="avis-servei"><b>Cal actualitzar el servei de Google.</b> El panell ja té la versió ' + VERSIO_SERVEI +
+      ', però el servei d\'Apps Script encara és la ' + esc(S.d.version || '?') + '. Fins que no s\'actualitzi, les plantilles noves, els peus de foto i el logotip en negatiu no es desaran. ' +
+      'Com fer-ho: copia els fitxers de la carpeta <b>apps-script</b> a l\'editor i fes <b>Implementa → Gestiona les implementacions → ✎ → Versió nova</b>.</div>';
+  }
+
   VISTES.inici = function () {
     titol('Inici');
     var d = S.d, u = S.user || {};
@@ -551,7 +604,7 @@
     var nom = (u.name || '').split(' ')[0];
     var av = actius(d.alerts);
     var enLinia = d.screens.filter(connectada).length;
-    var html = '<div class="salutacio"><h2>' + salut + (nom ? ', ' + esc(nom) : '') + '</h2><p>' +
+    var html = htmlAvisServei() + '<div class="salutacio"><h2>' + salut + (nom ? ', ' + esc(nom) : '') + '</h2><p>' +
       esc(Pnt.NOMS_DIES_LLARGS[l.dow]) + ', ' + l.d + ' de ' + Pnt.NOMS_MESOS[l.m - 1] + ' · ' + esc(d.settings.schoolName) + '</p></div>';
 
     html += '<div class="resum">' +
@@ -610,16 +663,18 @@
     var ara = elementsAra(p);
     var itemActual = null;
     if (e.st && e.st.itemId) S.d.playlists.forEach(function (ll) { var x = troba(ll.items, e.st.itemId); if (x) itemActual = x; });
-    var mini = itemActual ? miniItem(itemActual) : ara[0] ? miniItem(ara[0]) : null;
-    var fons = '';
-    if (mini) {
+    var mostra = itemActual || ara[0] || null;
+    var mini = mostra ? miniItem(mostra) : null;
+    var fons = '', diapo = '';
+    if (mini && mini.indexOf('data-diapo') >= 0) diapo = mini.replace('class="miniatura diapo', 'style="position:absolute;top:0;left:0;right:0;bottom:0;width:auto;height:auto" class="miniatura diapo');
+    else if (mini) {
       var m = /background(?:-image)?:([^"]+)"/.exec(mini);
       fons = m ? m[1].replace(/&quot;/g, '"') : '';
     }
     var llistes = p.playlists.map(function (id) { return troba(S.d.playlists, id); }).filter(Boolean);
     return '<div class="targeta t-pantalla" data-pantalla="' + p.id + '">' +
       '<div class="mini" data-previa="' + p.id + '" title="Vista prèvia" style="' + (fons ? 'background:' + esc(fons).replace(/&#39;/g, "'") + ';background-size:cover;background-position:center' : '') + '">' +
-      (fons ? '' : '<div class="sense">' + (ara.length ? '' : 'Sense contingut ara mateix') + '</div>') +
+      diapo + (fons || diapo ? '' : '<div class="sense">' + (ara.length ? '' : 'Sense contingut ara mateix') + '</div>') +
       '<span class="estat badge ' + e.classe + '"><span class="punt"></span>' + esc(e.text) + '</span><span class="veure">▶ Vista prèvia</span></div>' +
       '<div class="cos"><h3>' + esc(p.name) + '</h3>' +
       (p.location ? '<div class="subtil">' + esc(p.location) + '</div>' : '') +
@@ -1096,10 +1151,9 @@
   function nouIdLocal() { return 'n' + Math.random().toString(36).substr(2, 10); }
   function itemNou(kind) {
     var it = { id: nouIdLocal(), kind: kind, on: true, duration: null, schedule: null, name: '' };
-    var acc = S.d.settings.accent || '#c8102e';
-    if (kind === 'text') it.text = { title: '', body: '', footer: '', bg: acc, bg2: '', fg: '#ffffff', align: 'center', size: 100 };
-    if (kind === 'clock') it.text = { title: '', bg: '#14213d', bg2: '#1f3a73', fg: '#ffffff' };
-    if (kind === 'countdown') it.text = { title: 'Falten', date: '', bg: '#8b4fd1', bg2: '#3b6fd8', fg: '#ffffff', footer: '' };
+    if (kind === 'text') it.text = { template: 'granat', label: '', title: '', body: '', footer: '', align: 'left', size: 100 };
+    if (kind === 'clock') it.text = { title: '', footer: '' };
+    if (kind === 'countdown') it.text = { label: 'Compte enrere', title: '', date: '', time: '', footer: '' };
     if (kind === 'web') { it.url = ''; it.zoom = 100; it.reload = 0; }
     if (kind === 'youtube') { it.url = ''; it.duration = 60; }
     return it;
@@ -1154,52 +1208,60 @@
   });
 
   /* ---------- Editor d'un element ---------- */
+  function htmlPlantilles(actual) {
+    return '<div class="plantilles">' + Pnt.diapo.PLANTILLES.map(function (p) {
+      return '<button type="button" class="plantilla' + (p.id === actual ? ' triada' : '') + '" data-plantilla="' + p.id + '">' +
+        '<div class="mostra" data-mostra="' + p.id + '"></div><div class="peu-pl"><b>' + esc(p.nom) + '</b><span>' + esc(p.desc) + '</span></div></button>';
+    }).join('') + '</div>';
+  }
+
   function editaItem(it, enDesar, esNou) {
     var c = copia(it);
     var m = c.kind === 'media' ? troba(S.d.media, c.mediaId) : null;
     var esVideo = m && m.kind === 'video';
-    var titols = { media: esVideo ? 'Vídeo' : 'Foto', text: 'Diapositiva de text', web: 'Pàgina web', youtube: 'Vídeo de YouTube', clock: 'Rellotge i data', countdown: 'Compte enrere' };
+    var titols = { media: esVideo ? 'Vídeo' : 'Foto', text: 'Diapositiva', web: 'Pàgina web', youtube: 'Vídeo de YouTube', clock: 'Rellotge i data', countdown: 'Compte enrere' };
+    if (c.text && c.kind === 'text' && !c.text.template) c.text.template = 'granat';
     var t = c.text || {};
     var cos = '<div class="editor-graella"><div class="pila">';
     if (c.kind === 'text') {
-      cos += '<label class="camp">Títol<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="200" placeholder="Benvinguts!"></label>' +
-        '<label class="camp">Text <span class="ajuda">**negreta** · comença la línia amb «- » per fer una llista</span><textarea data-t="body" maxlength="1500" rows="5">' + esc(t.body) + '</textarea></label>' +
-        '<label class="camp">Peu (opcional)<input type="text" data-t="footer" value="' + esc(t.footer) + '" maxlength="200"></label>';
+      cos += '<div class="camp">Disseny' + htmlPlantilles(t.template) + '</div>' +
+        '<label class="camp">Etiqueta (opcional) <span class="ajuda">Paraula curta a sobre del títol: «Avís», «Avui», «Recordatori»…</span><input type="text" data-t="label" value="' + esc(t.label) + '" maxlength="40"></label>' +
+        '<label class="camp">Títol<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="200" placeholder="Benvinguts!"></label>' +
+        '<div class="fila" data-nomes="esdeveniment"><label class="camp">Data<input type="date" data-t="date" value="' + esc(t.date || '') + '"></label>' +
+        '<label class="camp">Hora (opcional)<input type="time" data-t="time" value="' + esc(t.time || '') + '"></label></div>' +
+        '<label class="camp" data-nomes="esdeveniment">Lloc (opcional)<input type="text" data-t="place" value="' + esc(t.place || '') + '" maxlength="120" placeholder="Pati de primària"></label>' +
+        '<label class="camp">Text <span class="ajuda">**negreta** · comença la línia amb «- » per fer una llista</span><textarea data-t="body" maxlength="1500" rows="4">' + esc(t.body) + '</textarea></label>' +
+        '<label class="camp">Peu (opcional)<input type="text" data-t="footer" value="' + esc(t.footer) + '" maxlength="200"></label>' +
+        '<div class="camp" data-nomes="foto">Foto de fons<div class="btns"><span data-fons-nom class="subtil">' + (t.bgMediaId ? esc((troba(S.d.media, t.bgMediaId) || {}).name || '') : 'Cap (cal triar-ne una)') + '</span>' +
+        '<button type="button" class="btn petit" data-tria-fons>Tria…</button></div></div>' +
+        '<div class="fila"><label class="camp" data-nomes="granat paper">Alineació<select data-t="align"><option value="left"' + (t.align !== 'center' ? ' selected' : '') + '>A l\'esquerra</option><option value="center"' + (t.align === 'center' ? ' selected' : '') + '>Centrat</option></select></label>' +
+        '<label class="camp">Mida de la lletra<input type="range" min="60" max="160" step="10" data-t="size" value="' + (t.size || 100) + '"></label></div>';
     }
     if (c.kind === 'countdown') {
-      cos += '<label class="camp">Títol<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="200" placeholder="Falten per a la festa de final de curs"></label>' +
+      cos += '<label class="camp">Etiqueta (opcional)<input type="text" data-t="label" value="' + esc(t.label) + '" maxlength="40" placeholder="Compte enrere"></label>' +
+        '<label class="camp">Títol<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="200" placeholder="Festival de Nadal"></label>' +
         '<div class="fila"><label class="camp">Data de l\'esdeveniment<input type="date" data-t="date" value="' + esc(t.date) + '"></label>' +
         '<label class="camp">Hora (opcional)<input type="time" data-t="time" value="' + esc(t.time || '') + '"></label></div>' +
         '<label class="camp">Peu (opcional)<input type="text" data-t="footer" value="' + esc(t.footer) + '" maxlength="200"></label>';
     }
     if (c.kind === 'clock') {
-      cos += '<label class="camp">Títol (opcional)<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="200" placeholder="Bon dia!"></label>' +
+      cos += '<label class="camp">Etiqueta (opcional)<input type="text" data-t="title" value="' + esc(t.title) + '" maxlength="40" placeholder="Bon dia"></label>' +
         '<label class="camp">Peu (opcional)<input type="text" data-t="footer" value="' + esc(t.footer) + '" maxlength="200"></label>';
-    }
-    if (c.kind === 'text' || c.kind === 'clock' || c.kind === 'countdown') {
-      cos += '<div class="fila"><label class="camp">Color de fons<input type="color" data-t="bg" value="' + esc(t.bg || '#c8102e') + '"></label>' +
-        '<label class="camp">Degradat cap a<span class="btns"><input type="color" data-t="bg2" value="' + esc(t.bg2 || t.bg || '#c8102e') + '"><label class="interruptor"><input type="checkbox" data-degradat' + (t.bg2 ? ' checked' : '') + '></label></span></label>' +
-        '<label class="camp">Color del text<input type="color" data-t="fg" value="' + esc(t.fg || '#ffffff') + '"></label></div>' +
-        '<div class="camp">Imatge de fons<div class="btns"><span data-fons-nom class="subtil">' + (t.bgMediaId ? esc((troba(S.d.media, t.bgMediaId) || {}).name || '') : 'Cap') + '</span>' +
-        '<button type="button" class="btn petit" data-tria-fons>Tria…</button><button type="button" class="btn petit" data-treu-fons' + (t.bgMediaId ? '' : ' hidden') + '>Treu</button></div></div>';
-      if (c.kind === 'text') {
-        cos += '<div class="fila"><label class="camp">Alineació<select data-t="align"><option value="center"' + (t.align !== 'left' ? ' selected' : '') + '>Centrat</option><option value="left"' + (t.align === 'left' ? ' selected' : '') + '>A l\'esquerra</option></select></label>' +
-          '<label class="camp">Mida de la lletra<input type="range" min="50" max="200" step="10" data-t="size" value="' + (t.size || 100) + '"></label></div>';
-      }
     }
     if (c.kind === 'web') {
       cos += '<label class="camp">Adreça de la pàgina<input type="url" data-u="url" value="' + esc(c.url) + '" placeholder="https://…" autofocus></label>' +
-        '<div class="avis-caixa info" style="font-size:13px">Funciona amb: presentacions de Google publicades, fulls de càlcul publicats, Canva (enllaç «Incrusta» o de visualització pública), webs pròpies, el temps… Algunes webs (Google, Instagram, diaris…) no deixen mostrar-se dins d\'una altra pàgina: fes servir la vista prèvia per comprovar-ho. <b>Les webs necessiten internet</b>; sense xarxa, la pantalla se les salta.</div>' +
+        '<div class="avis-caixa info" style="font-size:13px">Funciona amb presentacions de Google publicades, fulls de càlcul publicats, el Canva (enllaç «Incrusta» o de visualització pública) i webs pròpies. Algunes webs (Google, Instagram, diaris…) no deixen que les mostrin dins d\'una altra pàgina: comprova-ho amb la vista prèvia. <b>Les webs necessiten internet</b>; sense xarxa, la pantalla se les salta.</div>' +
         '<div class="fila"><label class="camp">Zoom (%)<input type="number" min="25" max="300" step="5" data-u="zoom" value="' + (c.zoom || 100) + '"></label>' +
         '<label class="camp">Recarregar cada (minuts)<input type="number" min="0" max="1440" data-u="reload" value="' + (c.reload || '') + '" placeholder="Mai"><span class="ajuda">Per a webs amb dades que canvien. Només si és l\'únic element.</span></label></div>';
     }
     if (c.kind === 'youtube') {
       cos += '<label class="camp">Enllaç de YouTube (vídeo o llista)<input type="url" data-u="url" value="' + esc(c.url) + '" placeholder="https://www.youtube.com/watch?v=…" autofocus></label>' +
-        '<div class="avis-caixa info" style="font-size:13px">Necessita internet. Si el vídeo és de l\'escola, és millor descarregar-lo i pujar-lo com a fitxer: així funciona sempre, fins i tot sense xarxa.</div>';
+        '<div class="avis-caixa info" style="font-size:13px">Necessita internet. Si el vídeo és de l\'escola, és millor pujar-lo com a fitxer: així funciona sempre, fins i tot sense xarxa.</div>';
     }
     if (c.kind === 'media' && m) {
-      cos += '<div class="subtil">' + esc(m.name) + ' · ' + mida(m.size) + (m.w ? ' · ' + m.w + '×' + m.h : '') + (m.duration ? ' · ' + duradaText(m.duration) : '') + '</div>';
-      if (!esVideo) cos += '<label class="interruptor"><input type="checkbox" data-kenburns' + (c.kenburns ? ' checked' : '') + '> Efecte de moviment lent (Ken Burns)</label>';
+      cos += '<div class="subtil">' + esc(m.name) + ' · ' + mida(m.size) + (m.w ? ' · ' + m.w + '×' + m.h : '') + (m.duration ? ' · ' + duradaText(m.duration) : '') + '</div>' +
+        '<label class="camp">Peu de foto (opcional) <span class="ajuda">Surt en un bloc granat a baix. La segona línia, més petita.</span><textarea data-caption rows="2" maxlength="200" placeholder="Sortida al Montseny&#10;3r de primària · dijous 5 de novembre">' + esc(c.caption || '') + '</textarea></label>';
+      if (!esVideo) cos += '<label class="interruptor"><input type="checkbox" data-kenburns' + (c.kenburns ? ' checked' : '') + '> Moviment lent sobre la foto</label>';
       cos += '<label class="camp">Com s\'ajusta a la pantalla<select data-fit><option value="">Com digui la pantalla</option><option value="cover"' + (c.fit === 'cover' ? ' selected' : '') + '>Omplir (retalla les vores)</option><option value="contain"' + (c.fit === 'contain' ? ' selected' : '') + '>Sencera (amb fons difuminat)</option></select></label>';
     }
     // Comú
@@ -1213,22 +1275,35 @@
 
     obreModal({
       titol: (esNou ? 'Nou: ' : '') + titols[c.kind],
-      classe: 'ample',
+      classe: 'molt-ample',
       cos: cos,
       peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn primari" data-ok>' + (esNou ? 'Afegeix a la llista' : 'Desa') + '</button>',
       noTancarFora: true,
       enObrir: function (el) {
         var caixa = $('[data-previa-item]', el);
-        var pinta = debounce(function () { pintaPreviaItem(caixa, c); }, 150);
+        var pinta = debounce(function () { pintaPreviaItem(caixa, c); }, 120);
+        var visibles = function () {
+          var tpl = c.text && c.text.template;
+          $$('[data-nomes]', el).forEach(function (n) { n.hidden = n.dataset.nomes.split(' ').indexOf(tpl) < 0; });
+        };
+        var pintaMostres = function () {
+          $$('[data-mostra]', el).forEach(function (box) {
+            var prova = copia(c);
+            prova.text.template = box.dataset.mostra;
+            if (!prova.text.title) prova.text.title = 'Títol de la diapositiva';
+            if (box.dataset.mostra === 'esdeveniment' && !prova.text.date) prova.text.date = Pnt.horaLocal(araServidor()).date;
+            if (box.dataset.mostra === 'foto' && !prova.text.bgMediaId) { var f = S.d.media.filter(function (x) { return x.kind === 'image'; })[0]; if (f) prova.text.bgMediaId = f.id; }
+            pintaDiapoA(box, prova);
+          });
+        };
         var llegeix = function () {
           if (c.text) {
             $$('[data-t]', el).forEach(function (i) { c.text[i.dataset.t] = i.type === 'range' ? +i.value : i.value; });
-            var deg = $('[data-degradat]', el);
-            if (deg && !deg.checked) c.text.bg2 = '';
           }
           $$('[data-u]', el).forEach(function (i) { c[i.dataset.u] = i.type === 'number' ? (parseInt(i.value, 10) || 0) : i.value.trim(); });
           var kb = $('[data-kenburns]', el); if (kb) c.kenburns = kb.checked;
           var fit = $('[data-fit]', el); if (fit) c.fit = fit.value;
+          var cap = $('[data-caption]', el); if (cap) c.caption = cap.value.trim();
           var du = parseInt($('[data-durada]', el).value, 10);
           c.duration = du >= 2 ? du : null;
           c.transition = $('[data-transicio]', el).value;
@@ -1237,6 +1312,14 @@
           pinta();
         };
         $$('input,select,textarea', el).forEach(function (i) { i.addEventListener('input', llegeix); i.addEventListener('change', llegeix); });
+        $$('[data-plantilla]', el).forEach(function (b) {
+          b.onclick = function () {
+            c.text.template = b.dataset.plantilla;
+            $$('[data-plantilla]', el).forEach(function (x) { x.classList.toggle('triada', x === b); });
+            visibles(); pinta();
+            if (c.text.template === 'foto' && !c.text.bgMediaId) $('[data-tria-fons]', el).click();
+          };
+        });
         activaHorari(el);
         var tf = $('[data-tria-fons]', el);
         if (tf) {
@@ -1247,7 +1330,6 @@
               editaItem(c, enDesar, esNou);
             });
           };
-          $('[data-treu-fons]', el).onclick = function () { c.text.bgMediaId = ''; $('[data-fons-nom]', el).textContent = 'Cap'; this.hidden = true; pinta(); };
         }
         $('[data-ok]', el).onclick = function () {
           llegeix();
@@ -1255,21 +1337,57 @@
           if (c.kind === 'youtube' && !Pnt.youtubeEmbed(c.url)) { toast('No sembla un enllaç de YouTube.', 'error'); return; }
           if (c.kind === 'countdown' && !(c.text && c.text.date)) { toast('Posa la data de l\'esdeveniment.', 'error'); return; }
           if (c.kind === 'text' && !(c.text.title || c.text.body)) { toast('Escriu almenys un títol o un text.', 'error'); return; }
+          if (c.kind === 'text' && c.text.template === 'esdeveniment' && !c.text.date) { toast('Posa la data de l\'esdeveniment.', 'error'); return; }
+          if (c.kind === 'text' && c.text.template === 'foto' && !c.text.bgMediaId) { toast('Tria la foto de fons.', 'error'); return; }
           tancaModal();
           enDesar(c);
         };
+        if (c.kind === 'text') { visibles(); pintaMostres(); }
         pintaPreviaItem(caixa, c);
       }
     });
   }
 
+  /** Context per dibuixar diapositives al panell (miniatures en lloc dels fitxers). */
+  function ctxPanell() {
+    return {
+      ara: araServidor,
+      urlMitja: function (id) { return S.thumbs[id] || null; },
+      logo: { color: S.logos.color || null, neg: S.logos.neg || null },
+      escola: (S.d && S.d.settings.schoolName) || 'Vedruna Escorial Vic'
+    };
+  }
+  /** Dibuixa una diapositiva dins una capsa, a escala. */
+  function pintaDiapoA(caixa, it) {
+    $$('.dp', caixa).forEach(function (n) { if (n.atura) n.atura(); });
+    caixa.innerHTML = '';
+    var n = Pnt.diapo.crea(it, ctxPanell());
+    if (!n) return null;
+    caixa.appendChild(n);
+    Pnt.diapo.escala(caixa);
+    Pnt.diapo.ajusta(n);
+    setTimeout(function () { Pnt.diapo.escala(caixa); Pnt.diapo.ajusta(n); }, 60);
+    return n;
+  }
+  /** Omple les miniatures de diapositives d'una vista (llistes, inici). */
+  var registreDiapos = {};
+  function omplirDiapos(cont) {
+    $$('[data-diapo]', cont || document).forEach(function (box) {
+      var it = registreDiapos[box.dataset.diapo];
+      if (!it) return;
+      var n = pintaDiapoA(box, it);
+      if (n && n.atura) n.atura();
+    });
+  }
+
   function pintaPreviaItem(caixa, it) {
-    caixa.querySelectorAll('.dp').forEach(function (n) { if (n.atura) n.atura(); });
+    $$('.dp', caixa).forEach(function (n) { if (n.atura) n.atura(); });
     caixa.innerHTML = '';
     if (it.kind === 'media') {
       var m = troba(S.d.media, it.mediaId);
       var th = S.thumbs[it.mediaId];
       caixa.innerHTML = th ? '<img src="' + th + '" alt="" style="object-fit:' + (it.fit === 'contain' ? 'contain' : 'cover') + '">' : '<div class="buit">' + esc(m ? m.name : '') + '</div>';
+      if (it.caption) { Pnt.diapo.escala(caixa); caixa.appendChild(Pnt.diapo.peuFoto(it.caption)); }
       return;
     }
     if (it.kind === 'web') {
@@ -1285,13 +1403,7 @@
       caixa.innerHTML = src ? '<iframe src="' + esc(src) + '" allow="autoplay; encrypted-media"></iframe>' : '<div class="buit" style="color:#aaa">Enganxa l\'enllaç del vídeo</div>';
       return;
     }
-    var ctx = { ara: araServidor, urlMitja: function (id) { return S.thumbs[id] || null; } };
-    var n = Pnt.diapo.crea(it, ctx);
-    if (!n) return;
-    caixa.appendChild(n);
-    var ajusta = function () { Pnt.diapo.escala(caixa); Pnt.diapo.ajusta(n); };
-    ajusta();
-    setTimeout(ajusta, 50);
+    pintaDiapoA(caixa, it);
   }
 
   /* ------------------------------------------------------------------
@@ -1486,7 +1598,7 @@
   function triaFitxersIPuja(idLlista) {
     var inp = document.createElement('input');
     inp.type = 'file'; inp.multiple = true;
-    inp.accept = 'image/*,video/*,application/pdf,.pdf,.mp4,.mov,.webm,.jpg,.jpeg,.png,.gif,.webp';
+    inp.accept = 'image/*,video/*,application/pdf,.pdf,.mp4,.mov,.webm,.jpg,.jpeg,.png,.gif,.webp,.svg';
     inp.onchange = function () { if (inp.files.length) puja(Array.prototype.slice.call(inp.files), idLlista); };
     inp.click();
   }
@@ -1554,7 +1666,7 @@
     var tipus = f.type || '';
     var nom = f.name.replace(/\.[^.]+$/, '');
     if (tipus === 'application/pdf' || /\.pdf$/i.test(f.name)) return pdfAImatges(f, nom, estat);
-    if (/^image\//.test(tipus) || /\.(jpe?g|png|gif|webp|bmp)$/i.test(f.name)) {
+    if (/^image\//.test(tipus) || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(f.name)) {
       if (/heic|heif/i.test(tipus) || /\.hei[cf]$/i.test(f.name)) return Promise.reject(new Error('Format HEIC (iPhone): canvia\'l a JPG o puja\'l des de l\'app Fotos'));
       return preparaImatge(f, nom).then(function (p) { return [p]; });
     }
@@ -1570,16 +1682,18 @@
     var esc2 = Math.min(1, 240 / Math.max(w, h));
     var c = document.createElement('canvas');
     c.width = Math.max(1, Math.round(w * esc2)); c.height = Math.max(1, Math.round(h * esc2));
-    c.getContext('2d').drawImage(font, 0, 0, c.width, c.height);
+    var cx = c.getContext('2d');
+    cx.fillStyle = '#D7D2CB'; cx.fillRect(0, 0, c.width, c.height);
+    cx.drawImage(font, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', 0.66);
   }
 
   function preparaImatge(f, nom) {
     var url = URL.createObjectURL(f);
     return carregaImatge(url).then(function (img) {
-      var w = img.naturalWidth, h = img.naturalHeight;
+      var w = img.naturalWidth || 800, h = img.naturalHeight || 400;
       var thumb = miniatura(img, w, h);
-      var gif = /gif/i.test(f.type);
+      var gif = /gif|svg/i.test(f.type);
       var cal = !gif && (Math.max(w, h) > MAX_COSTAT || f.size > 4 * 1024 * 1024 || /bmp/i.test(f.type));
       if (!cal) { URL.revokeObjectURL(url); return { blob: f, name: f.name, mime: f.type || 'image/jpeg', w: w, h: h, thumb: thumb }; }
       var k = Math.min(1, MAX_COSTAT / Math.max(w, h));
@@ -1677,7 +1791,8 @@
   /* ------------------------------------------------------------------
    *  AVISOS
    * ---------------------------------------------------------------- */
-  var COLORS_AVIS = [['#c8102e', 'Vermell'], ['#d9730d', 'Taronja'], ['#1f6fd1', 'Blau'], ['#1f9d55', 'Verd'], ['#6b3fc0', 'Lila'], ['#1b1f27', 'Negre']];
+  var TEMES_AVIS = [['urgent', 'Urgent', 'Granat, amb l\'etiqueta vermella que parpelleja'], ['info', 'Informatiu', 'Fons clar, més tranquil'], ['neutre', 'Sobri', 'Fons negre']];
+  var COLOR_TEMA = { urgent: '#821E34', info: '#BFB8AF', neutre: '#2D2926' };
   VISTES.avisos = function () {
     titol('Avisos');
     var d = S.d;
@@ -1736,7 +1851,8 @@
         '<label class="camp">Text (opcional)<textarea data-a="text" maxlength="1000" rows="3" placeholder="Sortiu en ordre pel punt de trobada del pati.">' + esc(a.text) + '</textarea></label>' +
         '<div class="camp">Com es mostra<div class="segment"><label><input type="radio" name="am" value="full"' + (a.mode !== 'banner' ? ' checked' : '') + '><span>Pantalla completa</span></label><label><input type="radio" name="am" value="banner"' + (a.mode === 'banner' ? ' checked' : '') + '><span>Banda a dalt</span></label></div>' +
         '<span class="ajuda">Pantalla completa: tapa tot el contingut. Banda: el contingut continua per sota.</span></div>' +
-        '<div class="camp">Color<div class="colors">' + COLORS_AVIS.map(function (c) { return '<label title="' + c[1] + '"><input type="radio" name="ac" value="' + c[0] + '"' + (a.color === c[0] ? ' checked' : '') + '><span style="background:' + c[0] + '"></span></label>'; }).join('') + '</div></div>' +
+        '<div class="camp">Estil<div class="segment">' + TEMES_AVIS.map(function (t) { return '<label title="' + esc(t[2]) + '"><input type="radio" name="at" value="' + t[0] + '"' + ((a.tema || 'urgent') === t[0] ? ' checked' : '') + '><span>' + t[1] + '</span></label>'; }).join('') + '</div></div>' +
+        '<label class="camp">Etiqueta (opcional)<input type="text" data-a="label" value="' + esc(a.label || '') + '" maxlength="40" placeholder="Avís urgent"></label>' +
         '<div class="camp">A quines pantalles<div class="pila" style="gap:8px;font-weight:500"><label class="interruptor"><input type="checkbox" data-totes' + (totes ? ' checked' : '') + '> <b>Totes</b></label>' +
         S.d.screens.map(function (p) { return '<label class="interruptor" data-una><input type="checkbox" data-p="' + p.id + '"' + (totes || (a.screens || []).indexOf(p.id) >= 0 ? ' checked' : '') + (totes ? ' disabled' : '') + '> ' + esc(p.name) + '</label>'; }).join('') + '</div></div>' +
         '<label class="camp">Quant de temps<select data-durada><option value="">Fins que l\'aturi</option><option value="15">15 minuts</option><option value="30">30 minuts</option><option value="60">1 hora</option><option value="120">2 hores</option><option value="dia">Fins al final del dia</option><option value="data"' + (a.until ? ' selected' : '') + '>Fins a una data i hora…</option></select></label>' +
@@ -1748,11 +1864,19 @@
         var caixa = $('[data-previa-avis]', el);
         var pinta = function () {
           var t = $('[data-a=title]', el).value, x = $('[data-a=text]', el).value;
-          var mode = $('input[name=am]:checked', el).value, color = $('input[name=ac]:checked', el) ? $('input[name=ac]:checked', el).value : '#c8102e';
-          Pnt.diapo.escala(caixa);
-          caixa.innerHTML = mode === 'full' ?
-            '<div style="position:absolute;inset:0;background:' + color + ';color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6em"><div style="font-size:12em;line-height:1">⚠</div><div style="font-size:9em;font-weight:850;line-height:1.05">' + esc(t) + '</div><div style="font-size:4.5em;margin-top:.8em">' + esc(x).replace(/\n/g, '<br>') + '</div></div>' :
-            '<div style="position:absolute;inset:0;background:linear-gradient(135deg,#556,#223)"></div><div style="position:absolute;left:0;right:0;top:0;background:' + color + ';color:#fff;padding:1.6em 3em;display:flex;gap:1.6em;align-items:center"><span style="font-size:5em">⚠</span><div><div style="font-size:4em;font-weight:800">' + esc(t) + '</div><div style="font-size:3em">' + esc(x) + '</div></div></div>';
+          var mode = $('input[name=am]:checked', el).value, tema = $('input[name=at]:checked', el).value;
+          var etq = $('[data-a=label]', el).value || (tema === 'urgent' ? 'Avís urgent' : 'Avís');
+          if (mode === 'full') {
+            var n = pintaDiapoA(caixa, { kind: 'text', text: { template: tema === 'info' ? 'paper' : 'granat', label: etq, title: t, body: x, size: 110 } });
+            if (n && tema === 'neutre') n.style.background = '#2D2926';
+          } else {
+            Pnt.diapo.escala(caixa);
+            var fons = tema === 'info' ? '#F4F1ED' : tema === 'neutre' ? '#2D2926' : '#821E34';
+            caixa.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:#6B625B"></div>' +
+              '<div style="position:absolute;left:0;right:0;top:0;min-height:12em;display:flex;background:' + fons + ';color:' + (tema === 'info' ? '#2D2926' : '#fff') + ';font-family:var(--font)">' +
+              '<div style="background:#FF004E;color:#fff;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:3em;display:flex;align-items:center;padding:0 1.6em 0 1em;clip-path:polygon(0 0,100% 0,calc(100% - .55em) 100%,0 100%)">' + esc(etq) + '</div>' +
+              '<div style="padding:2.2em 3em"><div style="font-size:4.6em;font-weight:700;line-height:1.05;color:' + (tema === 'info' ? '#821E34' : '#fff') + '">' + esc(t) + '</div><div style="font-size:3.2em">' + esc(x) + '</div></div></div>';
+          }
         };
         $$('input,textarea,select', el).forEach(function (i) { i.addEventListener('input', pinta); i.addEventListener('change', pinta); });
         $('[data-totes]', el).onchange = function () { var t = this.checked; $$('[data-p]', el).forEach(function (c) { c.disabled = t; if (t) c.checked = true; }); };
@@ -1764,7 +1888,9 @@
           r.text = $('[data-a=text]', el).value.trim();
           if (!r.title && !r.text) { toast('Escriu el títol de l\'avís.', 'error'); return; }
           r.mode = $('input[name=am]:checked', el).value;
-          var ac = $('input[name=ac]:checked', el); r.color = ac ? ac.value : '#c8102e';
+          r.tema = $('input[name=at]:checked', el).value;
+          r.label = $('[data-a=label]', el).value.trim();
+          r.color = COLOR_TEMA[r.tema];
           r.screens = $('[data-totes]', el).checked ? 'all' : $$('[data-p]:checked', el).map(function (c) { return c.dataset.p; });
           if (r.screens !== 'all' && !r.screens.length) { toast('Tria almenys una pantalla.', 'error'); return; }
           var du = $('[data-durada]', el).value;
@@ -1808,20 +1934,28 @@
   /* ------------------------------------------------------------------
    *  AJUSTOS
    * ---------------------------------------------------------------- */
+  function htmlLogo(tipus, titol, ajuda, id, admin) {
+    var fons = tipus === 'neg' ? '#821E34' : '#F4F1ED';
+    var u = S.logos[tipus];
+    return '<div class="camp">' + titol + '<div class="btns"><div style="background:' + fons + ';padding:10px 14px;min-width:120px;height:64px;display:flex;align-items:center">' +
+      (u ? '<img src="' + u + '" alt="" style="max-height:44px;max-width:200px">' : '<span style="color:' + (tipus === 'neg' ? '#fff' : '#6B625B') + ';font-weight:600">Cap</span>') + '</div>' +
+      (admin ? '<button class="btn petit" data-tria-logo="' + tipus + '">Tria…</button>' + (id ? '<button class="btn petit" data-treu-logo="' + tipus + '">Treu</button>' : '') : '') +
+      '</div><span class="ajuda">' + ajuda + '</span></div>';
+  }
+
   VISTES.ajustos = function () {
     titol('Ajustos');
     var d = S.d, s = d.settings;
     var admin = S.user && S.user.role === 'admin';
     var dis = admin ? '' : ' disabled';
-    var logo = s.logoMediaId ? troba(d.media, s.logoMediaId) : null;
     var tema = ls('pnt_tema') || 'auto';
     var html = '<div class="capcalera"><div><h2>Ajustos</h2>' + (admin ? '' : '<p>Només els administradors poden canviar els ajustos generals.</p>') + '</div></div>';
     html += '<div class="fila" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">';
     html += '<div class="targeta pad pila" data-form-ajustos><h3 style="margin:0">General</h3>' +
       '<label class="camp">Nom de l\'escola<input type="text" data-s="schoolName" value="' + esc(s.schoolName) + '" maxlength="120"' + dis + '></label>' +
-      '<div class="camp">Logotip<div class="btns">' + (logo && S.thumbs[logo.id] ? '<img src="' + S.thumbs[logo.id] + '" alt="" style="height:44px;border-radius:6px;background:var(--superficie-2)">' : '<span class="subtil">Cap</span>') +
-      (admin ? '<button class="btn petit" data-tria-logo>Tria de la biblioteca…</button>' + (logo ? '<button class="btn petit" data-treu-logo>Treu</button>' : '') : '') + '</div><span class="ajuda">Es mostra quan no hi ha contingut i, si ho actives, a la cantonada de les pantalles. Millor un PNG amb fons transparent.</span></div>' +
-      '<div class="fila"><label class="camp">Color de l\'escola<input type="color" data-s="accent" value="' + esc(s.accent) + '"' + dis + '></label>' +
+      htmlLogo('color', 'Logotip en color', 'Per a fons clars (blanc, paper). Millor en SVG o PNG amb fons transparent.', s.logoMediaId, admin) +
+      htmlLogo('neg', 'Logotip en negatiu (blanc)', 'Per a fons granat i fotos: pantalla d\'espera, avisos i menú del panell.', s.logoNegMediaId, admin) +
+      '<div class="fila">' +
       '<label class="camp">Segons per foto<input type="number" min="2" max="600" data-s="defaultDuration" value="' + s.defaultDuration + '"' + dis + '></label></div>' +
       '<div class="fila"><label class="camp">Transició general<select data-s="defaultTransition"' + dis + '>' + ['fade', 'slide', 'zoom', 'none'].map(function (t) { return '<option value="' + t + '"' + (s.defaultTransition === t ? ' selected' : '') + '>' + nomTransicio(t) + '</option>'; }).join('') + '</select></label>' +
       '<label class="camp">Velocitat de la cinta<select data-s="tickerSpeed"' + dis + '>' + [[50, 'Lenta'], [90, 'Normal'], [140, 'Ràpida']].map(function (v) { return '<option value="' + v[0] + '"' + (+s.tickerSpeed === v[0] ? ' selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select></label></div>' +
@@ -1865,16 +1999,23 @@
         crida('saveSettings', { settings: nous }, { desa: true }).then(function () { Object.assign(s, nous); S.rev = null; });
       }, 700);
       $$('[data-s]', form).forEach(function (i) { i.addEventListener(i.type === 'text' || i.type === 'number' ? 'input' : 'change', desa); });
-      var tl = $('[data-tria-logo]');
-      if (tl) tl.onclick = function () {
-        triaMitjans({ kind: 'image' }).then(function (ids) {
-          if (!ids || !ids[0]) return;
-          var nous = copia(s); nous.logoMediaId = ids[0];
-          crida('saveSettings', { settings: nous }, { desa: true }).then(function () { s.logoMediaId = ids[0]; render(true); });
-        });
-      };
-      var tr = $('[data-treu-logo]');
-      if (tr) tr.onclick = function () { var nous = copia(s); nous.logoMediaId = ''; crida('saveSettings', { settings: nous }, { desa: true }).then(function () { s.logoMediaId = ''; render(true); }); };
+      $$('[data-tria-logo]').forEach(function (b) {
+        b.onclick = function () {
+          triaMitjans({ kind: 'image' }).then(function (ids) {
+            if (!ids || !ids[0]) return;
+            var camp = b.dataset.triaLogo === 'neg' ? 'logoNegMediaId' : 'logoMediaId';
+            var nous = copia(s); nous[camp] = ids[0];
+            crida('saveSettings', { settings: nous }, { desa: true }).then(function () { s[camp] = ids[0]; return carregaLogos(); }).then(function () { render(true); });
+          });
+        };
+      });
+      $$('[data-treu-logo]').forEach(function (b) {
+        b.onclick = function () {
+          var camp = b.dataset.treuLogo === 'neg' ? 'logoNegMediaId' : 'logoMediaId';
+          var nous = copia(s); nous[camp] = '';
+          crida('saveSettings', { settings: nous }, { desa: true }).then(function () { s[camp] = ''; return carregaLogos(); }).then(function () { render(true); });
+        };
+      });
 
       // Persones
       var usuaris = copia(d.users);

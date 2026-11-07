@@ -27,6 +27,16 @@ Sistema propi i gratuït per gestionar les pantalles informatives de l'escola (r
 |---|---|---|
 | ![](docs/captures/08-pantalla-rellotge-cinta.png) | ![](docs/captures/11-pantalla-avis.png) | ![](docs/captures/15-mobil-llista.png) |
 
+## Plantilles amb la imatge de l'escola
+
+| Avís destacat | Informació | Foto amb text |
+|---|---|---|
+| ![](docs/plantilles/granat.jpg) | ![](docs/plantilles/paper.jpg) | ![](docs/plantilles/foto.jpg) |
+| **Esdeveniment** | **Compte enrere** | **Peu de foto** |
+| ![](docs/plantilles/esdeveniment.jpg) | ![](docs/plantilles/countdown.jpg) | ![](docs/plantilles/peu.jpg) |
+
+`eines/mostrari.html?p=<plantilla>` mostra cada plantilla per revisar-ne el disseny.
+
 ## Documentació
 
 - **[GUIA.md](GUIA.md)**: instal·lació pas a pas, com connectar cada tele i com fer-lo servir cada dia.

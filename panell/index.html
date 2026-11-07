@@ -3,21 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#c8102e">
+<meta name="theme-color" content="#821E34">
 <meta name="robots" content="noindex">
 <title>Panell de Pantalles</title>
 <link rel="icon" href="../icona.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="../comu/marca.css">
 <link rel="stylesheet" href="../comu/diapos.css">
 <link rel="stylesheet" href="panell.css">
 </head>
 <body>
 <!-- Entrada -->
 <section id="login" class="login" hidden>
+  <div class="login-marca">
+    <img class="logo-login" id="logo-login" alt="" hidden>
+    <div class="etq">Pantalles</div>
+    <h1>Vedruna<br>Escorial Vic</h1>
+    <div class="ratlla"></div>
+    <p>Panell de control de les pantalles informatives de l'escola.</p>
+  </div>
+  <div class="login-dreta">
   <div class="login-caixa">
-    <div class="login-logo"><img src="../icona.svg" alt=""></div>
-    <h1>Pantalles</h1>
-    <p class="login-sub">Panell de control de les pantalles de l'escola</p>
+    <h2>Entra</h2>
+    <p class="login-sub">Amb el teu correu de l'escola. T'enviarem un codi.</p>
     <form id="form-correu" class="login-form">
       <label for="correu">Correu de l'escola</label>
       <input id="correu" type="email" autocomplete="email" inputmode="email" placeholder="nom@escola.cat" required>
@@ -31,14 +39,15 @@
       <button class="btn enllac" type="button" id="torna-correu">Canviar de correu o tornar a enviar</button>
     </form>
     <p id="login-error" class="login-error" role="alert"></p>
+    <p class="login-peu">Només hi poden entrar les persones autoritzades.</p>
   </div>
-  <p class="login-peu">Només hi poden entrar les persones autoritzades.</p>
+  </div>
 </section>
 
 <!-- Aplicació -->
 <div id="app" class="app" hidden>
   <nav class="menu" id="menu">
-    <a class="menu-marca" href="#inici"><img src="../icona.svg" alt=""><span>Pantalles</span></a>
+    <a class="menu-marca" href="#inici" id="menu-marca"><span class="nom-marca">Vedruna<br>Escorial Vic</span><span class="sub-marca">Pantalles</span></a>
     <a href="#inici" data-sec="inici"><span class="ic">⌂</span><span>Inici</span></a>
     <a href="#pantalles" data-sec="pantalles"><span class="ic">▭</span><span>Pantalles</span></a>
     <a href="#llistes" data-sec="llistes"><span class="ic">☰</span><span>Llistes</span></a>

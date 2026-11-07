@@ -126,6 +126,11 @@
   Pnt.NOMS_DIES_LLARGS = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
   Pnt.NOMS_MESOS = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
 
+  /** «de novembre» / «d'abril» */
+  Pnt.deMes = function (m) { var n = Pnt.NOMS_MESOS[m - 1]; return (/^[aeiou]/.test(n) ? 'd\u2019' : 'de ') + n; };
+  /** «divendres, 6 de novembre» (dates sense abreviar, com demana l'estil de l'escola) */
+  Pnt.dataLlarga = function (l) { return Pnt.NOMS_DIES_LLARGS[l.dow] + ', ' + l.d + ' ' + Pnt.deMes(l.m); };
+
   function dataCurta(iso) { var p = iso.split('-'); return +p[2] + '/' + +p[1] + (p[0] !== String(new Date().getFullYear()) ? '/' + p[0] : ''); }
 
   /** Text llegible d'un horari: «del 3/11 al 7/11 · dl-dv · 8:00–9:30» */

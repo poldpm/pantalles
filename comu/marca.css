@@ -1,0 +1,20 @@
+/* =====================================================================
+ *  Identitat visual Vedruna Escorial Vic (manual de Vedruna Catalunya)
+ *  Granat i vermell sobre neutres · Titillium Web fins a Bold (700)
+ *  Vores rectes, sense ombres · recurs gràfic: tall a 45°
+ * ===================================================================== */
+@font-face { font-family: "Titillium Web"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/titillium-web-400.woff2") format("woff2"); }
+@font-face { font-family: "Titillium Web"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/titillium-web-600.woff2") format("woff2"); }
+@font-face { font-family: "Titillium Web"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/titillium-web-700.woff2") format("woff2"); }
+
+:root {
+  --granat-vedruna: #821E34;
+  --vermell-vedruna: #FF004E;
+  --negre: #2D2926;
+  --text-secundari: #6B625B;
+  --blanc: #FFFFFF;
+  --paper: #F4F1ED;
+  --gris-calid-1: #D7D2CB;
+  --gris-calid-3: #BFB8AF;
+  --font: "Titillium Web", "Segoe UI", sans-serif;
+}

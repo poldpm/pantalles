@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<title>Mostrari de plantilles</title>
+<link rel="stylesheet" href="../comu/marca.css">
+<link rel="stylesheet" href="../comu/diapos.css">
+<style>
+  body { margin: 0; background: #2D2926; font-family: "Titillium Web", sans-serif; }
+  .capsa { position: relative; overflow: hidden; }
+</style>
+</head>
+<body>
+<!-- Mostrari de les plantilles de diapositiva (per revisar el disseny i fer captures). ?p=<plantilla>&w=1920&h=1080 -->
+<div id="c" class="capsa"></div>
+<script>window.PANTALLES_CONFIG = {};</script>
+<script src="../comu/api.js"></script>
+<script src="../comu/diapos.js"></script>
+<script>
+  var q = new URLSearchParams(location.search);
+  var w = +q.get('w') || 1920, h = +q.get('h') || 1080, p = q.get('p') || 'granat';
+  var c = document.getElementById('c');
+  c.style.width = w + 'px'; c.style.height = h + 'px';
+  var foto = q.get('foto') || '';
+  var avui = Pnt.horaLocal(Date.now());
+  var d = new Date(Date.now() + 41 * 864e5).toISOString().substr(0, 10);
+  var items = {
+    granat: { kind: 'text', text: { template: 'granat', label: 'Avís', title: 'Divendres 13, jornada intensiva', body: 'Les classes acaben a les **13.00 h**.\n- El menjador funciona amb normalitat\n- Acollida fins a les 17.00 h' } },
+    paper: { kind: 'text', text: { template: 'paper', label: 'Informació', title: 'Inscripcions a les extraescolars', body: 'Del dilluns 9 al divendres 20 de novembre a la secretaria de l’escola o al web.\n- Robòtica, teatre i bàsquet\n- Places limitades', footer: 'Més informació a vedrunaescorialvic.cat' } },
+    foto: { kind: 'text', text: { template: 'foto', label: 'Avui', title: 'Sortida al Montseny', body: 'L’alumnat de 3r de primària descobreix el bosc de tardor.', bgMediaId: 'f' } },
+    esdeveniment: { kind: 'text', text: { template: 'esdeveniment', label: 'Portes obertes', title: 'Jornada de portes obertes', body: 'Visites guiades per les instal·lacions i xerrada amb l’equip directiu.', date: d, time: '17:00', place: 'Edifici principal · c/ Escorial' } },
+    clock: { kind: 'clock', text: { title: 'Bon dia' } },
+    countdown: { kind: 'countdown', text: { label: 'Compte enrere', title: 'Festival de Nadal', date: d, time: '18:00' } }
+  };
+  var ctx = { ara: function () { return Date.now(); }, urlMitja: function () { return foto; }, logo: { color: q.get('logo') || null, neg: q.get('logoneg') || null }, escola: 'Vedruna Escorial Vic' };
+  if (p === 'peu') {
+    c.style.background = 'url("' + foto + '") center/cover';
+    Pnt.diapo.escala(c, w, h);
+    c.appendChild(Pnt.diapo.peuFoto('Castanyada a l’escola\nEducació infantil · dijous 29 d’octubre'));
+  } else {
+    var n = Pnt.diapo.crea(items[p], ctx);
+    c.appendChild(n);
+    Pnt.diapo.escala(c, w, h);
+    document.fonts.ready.then(function () { Pnt.diapo.ajusta(n); document.body.dataset.llest = '1'; });
+  }
+  if (p === 'peu') document.fonts.ready.then(function () { document.body.dataset.llest = '1'; });
+</script>
+</body>
+</html>

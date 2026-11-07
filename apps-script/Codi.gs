@@ -167,6 +167,7 @@ function netejaItem_(it, bd) {
     transition: TRANSICIONS.indexOf(it.transition) >= 0 ? it.transition : '',
     fit: ['cover', 'contain'].indexOf(it.fit) >= 0 ? it.fit : '',
     kenburns: !!it.kenburns,
+    caption: kind === 'media' ? text_(it.caption, 200) : '',
     schedule: netejaHorari_(it.schedule)
   };
   if (kind === 'media') {
@@ -182,6 +183,8 @@ function netejaItem_(it, bd) {
   if (kind === 'text' || kind === 'clock' || kind === 'countdown') {
     const t = it.text || {};
     r.text = {
+      template: ['granat', 'paper', 'foto', 'esdeveniment'].indexOf(t.template) >= 0 ? t.template : 'granat',
+      label: text_(t.label, 40), place: text_(t.place, 120),
       title: text_(t.title, 200), body: text_(t.body, 1500), footer: text_(t.footer, 200),
       bg: color_(t.bg, '#c8102e'), bg2: color_(t.bg2, ''), fg: color_(t.fg, '#ffffff'),
       bgMediaId: troba_(bd.media, t.bgMediaId) ? t.bgMediaId : '',
@@ -327,7 +330,9 @@ function accioDesaAvis_(req, u) {
     a.text = text_(e.text, 1000);
     if (!a.title && !a.text) throw errUsuari_('L\'avís necessita un títol o un text.', 'AVIS');
     a.mode = e.mode === 'banner' ? 'banner' : 'full';
-    a.color = color_(e.color, '#c8102e');
+    a.color = color_(e.color, '#821E34');
+    a.tema = ['urgent', 'info', 'neutre'].indexOf(e.tema) >= 0 ? e.tema : 'urgent';
+    a.label = text_(e.label, 40);
     a.screens = e.screens === 'all' || !e.screens ? 'all' : [].concat(e.screens).filter(function (id) { return troba_(bd.screens, id); });
     a.until = e.until && !isNaN(Date.parse(e.until)) ? new Date(e.until).toISOString() : null;
     a.on = e.on !== false;
@@ -374,6 +379,7 @@ function accioDesaAjustos_(req, u) {
     s.schoolName = text_(e.schoolName, 120) || s.schoolName;
     s.accent = color_(e.accent, s.accent);
     s.logoMediaId = troba_(bd.media, e.logoMediaId) ? e.logoMediaId : '';
+    s.logoNegMediaId = troba_(bd.media, e.logoNegMediaId) ? e.logoNegMediaId : '';
     s.defaultDuration = enter_(e.defaultDuration, 2, 600, 10);
     s.defaultTransition = TRANSICIONS.indexOf(e.defaultTransition) >= 0 && e.defaultTransition ? e.defaultTransition : 'fade';
     s.bustiaPlaylistId = troba_(bd.playlists, e.bustiaPlaylistId) ? e.bustiaPlaylistId : '';

@@ -138,6 +138,30 @@ Si a la tele no es pot escriure l'adreça, des de **Afegir pantalla → «Fes se
 2. Al panell: **Llistes →** la llista que vulguis **→ ⇪ Pujar fitxers**. També pots arrossegar els fitxers a la llista.
 3. Ja està: en menys d'un minut es veu a les pantalles d'aquesta llista.
 
+### Diapositives amb el disseny de l'escola
+
+No cal fer-ho tot amb el Canva. A una llista, **Aa Text** crea una diapositiva amb la imatge de Vedruna Escorial Vic (granat i vermell, Titillium Web, vores rectes i el tall a 45°). N'hi ha quatre dissenys:
+
+| Disseny | Per a què |
+|---|---|
+| **Avís destacat** | Missatges importants. Fons granat. |
+| **Informació** | Textos més llargs. Fons clar. |
+| **Foto amb text** | Una foto de fons, amb el text en un bloc granat. |
+| **Esdeveniment** | La data ben gran, amb l'hora i el lloc. |
+
+També hi ha **🕒 Rellotge** i **⏳ Compte enrere**, amb el mateix estil.
+
+A les **fotos i vídeos** s'hi pot posar un **peu de foto** (✎ → «Peu de foto»): surt en un bloc granat a baix a l'esquerra.
+
+### Logotips (una sola vegada)
+
+A **Ajustos** hi ha dos logotips. Primer s'han de pujar a la Biblioteca, millor en **SVG** o en **PNG amb fons transparent**:
+
+- **Logotip en color**: per als fons clars (diapositives d'informació i d'esdeveniment).
+- **Logotip en negatiu (blanc)**: per als fons granat i les fotos (avisos, pantalla d'espera, menú del panell i, si s'activa a la pantalla, a sobre de les fotos).
+
+Fins que no es posin, en el seu lloc surt el nom «Vedruna Escorial Vic» en text.
+
 ### Organitzar el contingut
 
 - **Llistes**: grups de contingut, per exemple «Activitats del trimestre», «Benvinguda», «Nadal». Cada llista es pot mostrar a una o més pantalles.
@@ -161,7 +185,7 @@ Si a la tele no es pot escriure l'adreça, des de **Afegir pantalla → «Fes se
 
 ### Avisos urgents
 
-**Inici → ⚠ Avís urgent**: escriu el títol, tria el color, a quines pantalles i quant de temps. Surt **per sobre de tot** en menys d'un minut. Per treure'l, prem **■ Atura**.
+**Inici → Avís urgent**: escriu el títol i tria l'estil (*urgent*, *informatiu* o *sobri*), a quines pantalles i quant de temps. Surt **per sobre de tot** en menys d'un minut. Per treure'l, prem **■ Atura**.
 
 A **Avisos → Cinta de missatges** hi ha les frases curtes que passen per la part de baix de la pantalla.
 

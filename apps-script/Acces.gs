@@ -100,5 +100,10 @@ function usuariSessio_(req, bd, calAdmin) {
   const u = usuari_(bd || llegeixBd_(), dades.email);
   if (!u) throw errUsuari_('Aquest correu ja no té accés.', 'SESSIO');
   if (calAdmin && u.role !== 'admin') throw errUsuari_('Només els administradors poden fer això.', 'PERMIS');
+  // Sessió que es renova sola: mentre la facis servir, no caduca (com a molt, una escriptura al dia).
+  if (dades.exp - Date.now() < (DIES_SESSIO - 1) * 864e5) {
+    dades.exp = Date.now() + DIES_SESSIO * 864e5;
+    prop_('ses_' + hash_(req.session), JSON.stringify(dades));
+  }
   return { email: normalitzaCorreu_(u.email), name: u.name || '', role: u.role || 'editor' };
 }

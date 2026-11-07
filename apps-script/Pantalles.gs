@@ -173,6 +173,7 @@ function configPantalla_(bd, p) {
     });
   });
   if (bd.settings.logoMediaId) usats[bd.settings.logoMediaId] = true;
+  if (bd.settings.logoNegMediaId) usats[bd.settings.logoNegMediaId] = true;
   const media = {};
   bd.media.forEach(function (m) {
     if (usats[m.id]) media[m.id] = { mime: m.mime, kind: m.kind, size: m.size, w: m.w, h: m.h, duration: m.duration, name: m.name };
@@ -191,7 +192,7 @@ function configPantalla_(bd, p) {
       transition: p.transition || '', duration: p.duration || 0, overlays: p.overlays || {}, sound: !!p.sound, hours: p.hours || { on: false }
     },
     settings: {
-      schoolName: s.schoolName, accent: s.accent, logoMediaId: s.logoMediaId,
+      schoolName: s.schoolName, accent: s.accent, logoMediaId: s.logoMediaId, logoNegMediaId: s.logoNegMediaId,
       defaultDuration: s.defaultDuration, defaultTransition: s.defaultTransition, tickerSpeed: s.tickerSpeed
     },
     items: items,
