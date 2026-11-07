@@ -163,7 +163,7 @@ const context = vm.createContext(Object.assign({}, serveis));
 const dirGs = path.join(ARREL, 'apps-script');
 const ORDRE = ['Codi.gs', 'Dades.gs', 'Acces.gs', 'Mitjans.gs', 'Pantalles.gs', 'Instal.gs'];
 const tots = fs.readdirSync(dirGs).filter((f) => f.endsWith('.gs'));
-tots.filter((f) => ORDRE.indexOf(f) < 0).forEach((f) => ORDRE.push(f));
+tots.filter((f) => ORDRE.indexOf(f) < 0 && f !== 'Carregador.gs').forEach((f) => ORDRE.push(f)); // el carregador (codi de GitHub) no s'usa en proves
 ORDRE.forEach((f) => vm.runInContext(fs.readFileSync(path.join(dirGs, f), 'utf8'), context, { filename: f }));
 vm.runInContext('globalThis.__doPost = doPost; globalThis.__installar = installar; globalThis.__revisaBustia = revisaBustia;', context);
 context.__installar();

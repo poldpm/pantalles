@@ -2054,7 +2054,9 @@
     var caixaServei = $('[data-servei]');
     if (caixaServei) {
       crida('serviceStatus', {}, { silenci: true }).then(function (r) {
-        $('[data-servei-estat]').innerHTML = (r.lastUpdate ? 'Última actualització: ' + dataHora(r.lastUpdate) : 'Encara no s\'ha actualitzat mai sol') +
+        $('[data-servei-estat]').innerHTML = (r.loader === false ? '<span style="color:var(--error)">Falta el fitxer «Carregador» al projecte d\'Apps Script (GUIA → «Actualitzacions automàtiques»).</span><br>' : '') +
+          (r.commit ? 'Codi de GitHub: ' + esc(r.commit.substr(0, 7)) + ' · ' : '') +
+          (r.lastUpdate ? 'Última actualització: ' + dataHora(r.lastUpdate) : 'Encara no s\'ha actualitzat mai sol') +
           (r.lastError ? '<br><span style="color:var(--error)">Últim error: ' + esc(r.lastError) + '</span>' : '');
       }, function (e) {
         $('[data-servei-estat]').innerHTML = '<span style="color:var(--error)">Aquest servei encara no sap actualitzar-se sol. Cal fer la configuració inicial (GUIA → «Actualitzacions automàtiques»).</span>';

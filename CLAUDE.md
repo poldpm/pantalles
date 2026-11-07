@@ -56,7 +56,7 @@ ha de ser en català, clar i sense sorpreses.
 - `node eines/prova-e2e.js <carpeta-fitxers> [carpeta-captures]`: recorregut complet amb
   Playwright (vincular, pujar, programar, avisos, sense xarxa, mòbil, bústia).
   **Ha de passar sencera abans de cada push.**
-- Si canvies `apps-script/`: el servei s'actualitza sol des de GitHub (`Actualitza.gs`). En fer push,
+- Si canvies `apps-script/`: el servei executa sempre el codi de GitHub (`Carregador.gs` el baixa, el desa al Drive i el posa en marxa amb `eval`; `Carregador.gs` i `appsscript.json` NO s'actualitzen sols: evita canviar-los). En fer push,
   el workflow `.github/workflows/actualitza-servei.yml` crida l'acció pública `selfUpdate`. Si el workflow
   no s'executa, crida-la tu mateix: `curl -sSL -d '{"action":"selfUpdate"}' <URL de config.js>`.
   Un fitxer .gs nou s'ha d'afegir a `apps-script/fitxers.json`. Puja `VERSIO_APP` (Dades.gs) i

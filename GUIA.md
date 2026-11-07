@@ -82,18 +82,16 @@ Al final hi ha la secció de [problemes freqüents](#4-problemes-freqüents).
 
 ### Actualitzacions automàtiques (configuració d'una sola vegada)
 
-Un cop fet això, el servei de Google **s'actualitza sol a l'instant** cada vegada que es publica un canvi a GitHub. Ja no caldrà tornar a copiar fitxers.
+Un cop fet això, el servei de Google **fa servir sempre el codi publicat a GitHub**: quan es publica un canvi, s'aplica a l'instant. Ja no cal copiar fitxers ni fer versions noves.
 
-1. Entra a **https://script.google.com/home/usersettings** amb el mateix compte i activa **«API de Google Apps Script»**.
-2. A l'editor del projecte **Pantalles**, actualitza per darrera vegada el codi a mà:
-   - Substitueix el contingut de `Codi`, `Dades`, `Acces`, `Mitjans`, `Pantalles`, `Instal` i `appsscript.json` pels de la carpeta [`apps-script/`](apps-script/).
-   - Crea un fitxer nou (**＋ → Script**) anomenat **`Actualitza`** i enganxa-hi [`apps-script/Actualitza.gs`](apps-script/Actualitza.gs).
-3. Desa, tria la funció **`installar`** i prem **▶ Executa**. Et demanarà permisos nous (gestionar els projectes i les implementacions d'Apps Script): accepta'ls.
-4. **Implementa → Gestiona les implementacions → ✎ → Versió: «Versió nova» → Implementa**. L'adreça es manté.
+1. A l'editor del projecte **Pantalles**, crea un fitxer nou (**＋ → Script**) anomenat **`Carregador`** i enganxa-hi [`apps-script/Carregador.gs`](apps-script/Carregador.gs). Ha de ser l'últim fitxer de la llista.
+2. Desa i fes **Implementa → Gestiona les implementacions → ✎ → Versió: «Versió nova» → Implementa**. L'adreça es manté.
 
-A **Ajustos → Servei de Google** del panell es veu la versió i l'última actualització, i hi ha dos botons: **Actualitza ara** i **Torna a la versió anterior**, per si alguna actualització no anés bé.
+A **Ajustos → Servei de Google** del panell hi ha la versió, quin codi de GitHub s'està fent servir i dos botons: **Actualitza ara** i **Torna a la versió anterior**.
 
-Com funciona: quan es publica un canvi a la carpeta `apps-script/`, GitHub avisa el servei. El servei llegeix el codi de la branca principal del repositori (mai d'enlloc més), el copia, en fa una versió nova i la posa en marxa a la mateixa adreça. Si troba un error, es queda la versió que hi havia. A més, cada hora comprova que estigui al dia.
+Com funciona: quan es publica un canvi a `apps-script/`, GitHub avisa el servei. El servei baixa el codi de la branca principal del repositori (mai d'enlloc més), comprova que no tingui errors i el desa al Drive. A partir d'aquí, cada petició fa servir aquest codi. Si alguna cosa fallés, el servei continua funcionant amb el codi que hi ha copiat a l'editor. A més, cada hora comprova que estigui al dia.
+
+*Nota:* el fitxer `Carregador` i els permisos (`appsscript.json`) no s'actualitzen sols. Si mai canvien, el panell ho dirà.
 
 ---
 
