@@ -48,7 +48,7 @@ function apiScript_(metode, cami, cos) {
   if (codi >= 300) {
     const msg = (dades.error && dades.error.message) || r.getContentText().substr(0, 300);
     if (codi === 403 && /Apps Script API/i.test(msg)) {
-      throw errUsuari_('Cal activar l\'«API de Google Apps Script» a script.google.com/home/usersettings (una sola vegada).', 'API_DESACTIVADA');
+      throw errUsuari_('Cal activar l\'«API de Google Apps Script» a script.google.com/home/usersettings (una sola vegada) amb el compte propietari del projecte. Resposta de Google: ' + msg.substr(0, 250), 'API_DESACTIVADA');
     }
     throw errUsuari_('Error de l\'API d\'Apps Script (' + codi + '): ' + msg, 'API');
   }
