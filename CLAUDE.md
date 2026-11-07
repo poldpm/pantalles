@@ -42,6 +42,9 @@ ha de ser en català, clar i sense sorpreses.
     continua funcionant sense xarxa.
   - Avalua la programació amb l'hora de l'escola (`Europe/Madrid` + desfasament del servidor).
   - Té un vigilant que es recupera si s'encalla i es recarrega cada dia a les 4 h.
+  - Cada 3 minuts comprova si s'han publicat fitxers nous del programa; si n'hi ha, es recarrega sol
+    (si està en pantalla completa «manual», espera a les 4 h per no perdre-la). Els canvis de contingut
+    no depenen d'això: arriben per `sync`.
 - `panell/`: SPA vanilla JS. Desa automàticament, amb control de conflictes per llista (`v`).
   - Converteix els PDF en imatges amb pdf.js, redueix les fotos a 2560 px i fa les miniatures al navegador.
 - `comu/`: `api.js` (client, horaris, utilitats), `diapos.js/css` (diapositives de text,

@@ -177,7 +177,7 @@
       itemId: actual && actual.item ? actual.item.id : '', items: config ? elegibles().length : 0,
       cached: claus.length, missing: falten, res: window.innerWidth + 'x' + window.innerHeight,
       ua: navigator.userAgent.substr(0, 200), v: VERSIO, mode: avisPle() ? 'avis' : mode,
-      up: Math.round((Date.now() - inici) / 1000), err: darrerError, online: true
+      up: Math.round((Date.now() - inici) / 1000), err: programaNou ? 'Hi ha una versió nova del programa: s\'aplicarà en reiniciar la pantalla' : darrerError, online: true
     };
   }
 
@@ -294,7 +294,7 @@
     if (o.id === darreraOrdre) return;
     darreraOrdre = o.id;
     escriuLS('pnt_ordre', o.id);
-    if (o.type === 'reload') setTimeout(function () { location.reload(); }, 500);
+    if (o.type === 'reload') setTimeout(recarregaNeta, 500);
     if (o.type === 'identify') identifica();
     if (o.type === 'clearcache') {
       mitjans.claus().then(function (claus) {
@@ -805,6 +805,47 @@
   /* ---------------------------------------------------------------
    *  Vigilant: si alguna cosa s'encalla, es recupera sola
    * ------------------------------------------------------------- */
+  /* ---------------------------------------------------------------
+   *  Actualització del programa de la pantalla
+   *  Cada 3 minuts mira si s'ha publicat una versió nova dels fitxers.
+   *  Si n'hi ha i la pantalla no depèn d'haver premut un botó per estar
+   *  en pantalla completa (mode quiosc o finestra), es recarrega de seguida.
+   *  Si està en pantalla completa «manual», espera a la nit (4 h) per no
+   *  perdre-la, tret que ho demanin des del panell (Reinicia).
+   * ------------------------------------------------------------- */
+  var FITXERS_PROGRAMA = ['index.html', 'pantalla.js', 'pantalla.css', '../comu/api.js', '../comu/diapos.js', '../comu/diapos.css', '../comu/marca.css'];
+  var empremtaPrograma = null, programaNou = false;
+  function llegeixEmpremta() {
+    return Promise.all(FITXERS_PROGRAMA.map(function (f) {
+      return fetch(f, { method: 'GET', cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      }).then(function (t) {
+        var h = 0;
+        for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0;
+        return t.length + ':' + h;
+      });
+    })).then(function (parts) { return parts.join('|'); });
+  }
+  function comprovaPrograma() {
+    if (PREVIA || !navigator.onLine) return;
+    llegeixEmpremta().then(function (e) {
+      if (empremtaPrograma === null) { empremtaPrograma = e; return; }
+      if (e !== empremtaPrograma) {
+        programaNou = true;
+        if (!(document.fullscreenElement || document.webkitFullscreenElement)) recarregaNeta();
+      }
+    }, function () { /* sense xarxa: ja ho mirarem */ });
+  }
+  function recarregaNeta() {
+    if ('caches' in window) {
+      caches.keys().then(function (k) { return Promise.all(k.map(function (x) { return caches.delete(x); })); })
+        .then(function () { location.reload(); }, function () { location.reload(); });
+    } else location.reload();
+  }
+  var cadaProg = Math.max(3000, (parseInt(qs.get('_prog'), 10) || 180) * 1000); // _prog només per a proves
+  if (!PREVIA) { setTimeout(comprovaPrograma, Math.min(20000, cadaProg)); setInterval(comprovaPrograma, cadaProg); }
+
   var darreraRecarrega = Date.now();
   function vigilant() {
     if (!config || mode === 'vinculacio') return;
@@ -819,7 +860,7 @@
     pintaAvisos();
     // Recàrrega diària de neteja (entre les 4 i les 5 de la matinada) si hi ha connexió.
     var l = local();
-    if (!PREVIA && l.h === 4 && enLinia && Date.now() - darreraRecarrega > 3 * 3600000 && Date.now() - inici > 3600000) location.reload();
+    if (!PREVIA && l.h === 4 && enLinia && Date.now() - darreraRecarrega > 3 * 3600000 && Date.now() - inici > 3600000) recarregaNeta();
   }
   window.addEventListener('error', function (e) { darrerError = String(e.message || e).substr(0, 180); });
   window.addEventListener('unhandledrejection', function (e) { darrerError = String((e.reason && e.reason.message) || e.reason).substr(0, 180); });

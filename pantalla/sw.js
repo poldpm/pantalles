@@ -1,7 +1,7 @@
 /* PANTALLES · Service worker del reproductor
  * Guarda l'aplicació perquè la pantalla torni a arrencar encara que no hi hagi xarxa.
  * Estratègia: primer la xarxa (així les actualitzacions arriben soles), si falla, la còpia. */
-var CAU = 'pantalla-v2';
+var CAU = 'pantalla-v3';
 var FITXERS = ['./', './index.html', './pantalla.js', './pantalla.css', './manifest.webmanifest',
   '../config.js', '../comu/api.js', '../comu/diapos.js', '../comu/diapos.css', '../comu/marca.css',
   '../comu/fonts/titillium-web-400.woff2', '../comu/fonts/titillium-web-600.woff2', '../comu/fonts/titillium-web-700.woff2', '../icona.svg'];
@@ -23,7 +23,9 @@ self.addEventListener('fetch', function (e) {
       return caches.match(req, { ignoreSearch: true }).then(function (r) { return r || caches.match('./index.html'); });
     };
     var t = setTimeout(function () { if (!fet) { fet = true; deCau().then(resol); } }, 5000);
-    fetch(req).then(function (r) {
+    // Sempre pregunta al servidor si hi ha versió nova (GitHub Pages diu «guarda-ho 10 minuts»)
+    var xarxa = req.mode === 'navigate' ? fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }) : fetch(new Request(req, { cache: 'no-cache' }));
+    xarxa.then(function (r) {
       if (r && r.ok) { var copia = r.clone(); caches.open(CAU).then(function (c) { c.put(req, copia); }); }
       if (!fet) { fet = true; clearTimeout(t); resol(r); }
     }, function () {
