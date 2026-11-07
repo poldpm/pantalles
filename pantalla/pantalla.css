@@ -110,7 +110,7 @@ body.sense-cursor, body.sense-cursor * { cursor: none !important; }
 .fora-linia .estat-xarxa { display: block; }
 .prev-etiqueta { position: absolute; left: 0; top: 0; z-index: 97; font-size: 2.4em; padding: .5em 1em; background: #2D2926; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase; }
-.pista-fs { position: absolute; left: 50%; bottom: 12em; transform: translateX(-50%); z-index: 98; font-size: 2.8em; padding: .7em 1.4em;
+.pista-fs { position: absolute; left: 50%; bottom: 12em; transform: translateX(-50%); z-index: 98; font-size: 2.8em; padding: .7em 1.4em; border-left: .3em solid #FF004E; white-space: nowrap;
   background: #2D2926; transition: opacity .6s; font-weight: 600; }
 
 .inici { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center;

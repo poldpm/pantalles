@@ -809,13 +809,42 @@
     var tCursor;
     var mou = function () { document.body.classList.remove('sense-cursor'); clearTimeout(tCursor); tCursor = setTimeout(function () { document.body.classList.add('sense-cursor'); }, 3000); };
     document.addEventListener('mousemove', mou); mou();
-    var pantallaCompleta = function () {
-      var d = document.documentElement;
-      if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen().catch(function () {});
+    var ambDocument = function () { return document.fullscreenElement || document.webkitFullscreenElement; };
+    var jaEsCompleta = function () {
+      return !!ambDocument() || window.matchMedia('(display-mode: fullscreen)').matches ||
+        (window.innerHeight >= screen.height - 2 && window.innerWidth >= screen.width - 2);
     };
-    document.addEventListener('click', pantallaCompleta);
+    var pista = null;
+    var amagaPista = function () { pista = treu(pista); };
+    var mostraPista = function () {
+      if (PREVIA || pista || jaEsCompleta()) return;
+      pista = document.createElement('div');
+      pista.className = 'pista-fs';
+      pista.textContent = 'Prem qualsevol botó per posar la pantalla completa';
+      sup.appendChild(pista);
+    };
+    var pantallaCompleta = function () {
+      if (PREVIA || ambDocument()) return Promise.resolve();
+      var d = document.documentElement;
+      var fn = d.requestFullscreen || d.webkitRequestFullscreen;
+      if (!fn) return Promise.reject(new Error('sense pantalla completa'));
+      try {
+        var r = fn.call(d, { navigationUI: 'hide' });
+        return r && r.then ? r.then(amagaPista) : (amagaPista(), Promise.resolve());
+      } catch (e) { return Promise.reject(e); }
+    };
+    // Qualsevol tecla o clic posa la pantalla completa (els navegadors només ho permeten així).
+    document.addEventListener('click', function () { pantallaCompleta().catch(function () {}); });
+    document.addEventListener('keydown', function () { pantallaCompleta().catch(function () {}); }, true);
+    // Als 10 segons ho intenta sol; si el navegador no ho deixa, mostra l'avís fins que algú premi un botó.
+    setTimeout(function () {
+      if (jaEsCompleta()) return;
+      pantallaCompleta().then(function () { if (!jaEsCompleta()) mostraPista(); }, mostraPista);
+    }, 10000);
+    var enCanviar = function () { if (ambDocument()) amagaPista(); else setTimeout(mostraPista, 1500); };
+    document.addEventListener('fullscreenchange', enCanviar);
+    document.addEventListener('webkitfullscreenchange', enCanviar);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') pantallaCompleta();
       if (e.key === 'ArrowRight') seguent();
       if (e.key === 'ArrowLeft') seguent(-1);
       if (e.key === 'i' || e.key === 'I' || e.key === 'Info' || e.key === 'ColorF0Red') mostraInfo();
@@ -824,15 +853,6 @@
     var bloqueig = function () { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); };
     bloqueig();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') bloqueig(); });
-    // Pista de pantalla completa (només si no ho està ja)
-    setTimeout(function () {
-      if (document.fullscreenElement || window.matchMedia('(display-mode: fullscreen)').matches || window.innerHeight >= screen.height - 2) return;
-      var p = document.createElement('div');
-      p.className = 'pista-fs';
-      p.textContent = 'Prem OK o fes clic per posar la pantalla completa';
-      sup.appendChild(p);
-      setTimeout(function () { p.style.opacity = 0; setTimeout(function () { treu(p); }, 800); }, 12000);
-    }, 2500);
   }
 
   function mostraInfo() {

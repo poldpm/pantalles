@@ -129,6 +129,8 @@ Si a la tele no es pot escriure l'adreça, des de **Afegir pantalla → «Fes se
 4. Configura Windows perquè no s'adormi ni apagui la pantalla (*Configuració → Sistema → Inici/apagada*) i, si pot ser, perquè entri a la sessió sense contrasenya.
 5. Per sortir del mode quiosc: `Alt+F4`.
 
+**Pantalla completa:** als 10 segons d'obrir l'adreça, la pantalla intenta posar-se sola en pantalla completa. Molts navegadors no ho permeten sense que algú premi un botó: en aquest cas surt l'avís «Prem qualsevol botó per posar la pantalla completa», i n'hi ha prou amb una tecla del comandament o un clic. Perquè no calgui ni això, el millor és obrir el navegador en mode quiosc (l'ordre de Chrome de més amunt amb `--kiosk`, o una app de quiosc a l'Android TV).
+
 **Comandament o teclat davant de la pantalla:**
 - `OK` / `Enter` / clic: pantalla completa.
 - `→` / `←`: diapositiva següent o anterior (per comprovar coses).
