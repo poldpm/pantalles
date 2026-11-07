@@ -49,7 +49,11 @@ function accionsPanell_() { return {
   saveUsers: [accioDesaUsuaris_, true],
   updateService: [accioActualitzaServei_, true],
   rollbackService: [accioTornaVersio_, true],
-  serviceStatus: [accioEstatServei_, true]
+  serviceStatus: [accioEstatServei_, true],
+  arxiuPublica: [accioArxiuPublica_, false],
+  arxiuDescarta: [accioArxiuDescarta_, false],
+  arxiuEscaneja: [accioArxiuEscaneja_, false],
+  arxiuConfig: [accioArxiuConfig_, true]
 }; }
 
 function doGet(e) {
@@ -104,6 +108,12 @@ function accioEstat_(req, u) {
     screens: bd.screens.map(senseSecrets_),
     playlists: bd.playlists, media: bd.media, alerts: bd.alerts, ticker: bd.ticker,
     status: estats, log: bd.log.slice(-200).reverse()
+  };
+  const ax = cfgArxiu_(bd);
+  res.arxiu = {
+    on: ax.on, folderId: ax.folderId, screens: ax.screens, since: ax.since || '', pendents: ax.pendents,
+    darrera: ax.darrera || '', carpetes: ax.carpetes || 0, error: ax.error || '', mes: mesActual_(),
+    publicadesMes: ax.aprovades.filter(function (a) { return a.mes === mesActual_(); }).length
   };
   return res;
 }

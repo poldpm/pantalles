@@ -210,6 +210,19 @@ A **Avisos → Cinta de missatges** hi ha les frases curtes que passen per la pa
 - **◎ Identifica** fa que la tele mostri el seu nom durant 20 segons (va bé per saber quina és quina).
 - **Ajustos → Registre d'activitat**: qui ha canviat què i quan.
 
+### Arxiu fotogràfic (fotos dels cursos)
+
+Cada curs deixa les fotos que vol veure a les pantalles a la seva carpeta **«Per penjar»** de l'arxiu fotogràfic del Drive. A partir d'aquí:
+
+1. **Cada 10 minuts** el sistema mira si n'hi ha de noves i les posa a **Arxiu → Per revisar**, agrupades per curs. El menú mostra quantes n'hi ha.
+2. Les revises: totes estan marcades per defecte. Desmarca les que no vulguis i prem **Publica les seleccionades**, o **Descarta** les que no s'han de mostrar.
+3. Les publicades van soles a la llista **«Arxiu fotogràfic · <mes>»**, que es mostra a les pantalles triades. Si un curs n'envia poques, surten una a una; si n'envia moltes, en collages. Totes porten el **nom del curs** al peu, i els cursos s'alternen.
+4. **Quan canvia el mes**, la llista anterior deixa de mostrar-se sola i en comença una de nova.
+
+Al Drive no es toca res: de cada foto publicada es fa una còpia reduïda (2560 px, ben girada) a la biblioteca. Si una foto té poca resolució, ho veuràs marcat abans de publicar-la.
+
+**Configuració** (una sola vegada, un administrador): **Arxiu** → enllaç de la carpeta principal de l'arxiu, a quines pantalles es mostra i si s'han d'agafar també les fotos que ja hi havia. Cal que el compte amb què es va instal·lar el servei tingui accés a l'arxiu.
+
 ### La bústia del Drive (opcional)
 
 Dins la carpeta del Drive hi ha la **Bústia**. Si s'hi deixen fotos o vídeos (per exemple des de l'app del Drive del mòbil), es poden importar des de **Biblioteca → 📥 Bústia del Drive**. Un administrador pot fer que s'afegeixin **sols** a una llista cada 10 minuts (**Ajustos → Bústia automàtica**).

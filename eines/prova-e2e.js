@@ -241,6 +241,36 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     ok(true, 'importa fitxers de la bústia del Drive');
     await captura(p, '16-biblioteca');
 
+    /* ---------- 11. Arxiu fotogràfic ---------- */
+    console.log('Arxiu fotogràfic');
+    const cursos = [['4t de primària', 'Primària', 5], ['P4', 'Infantil', 1]];
+    for (const [curs, etapa, n] of cursos) {
+      for (let i = 0; i < n; i++) {
+        await fetch(BASE + '/__arxiu?curs=' + encodeURIComponent(curs) + '&etapa=' + encodeURIComponent(etapa) + '&nom=IMG_' + i + '.jpg', { method: 'POST', body: fs.readFileSync(path.join(FITXERS, 'foto' + (i % 3 + 1) + '.jpg')) });
+      }
+    }
+    await p.goto(BASE + '/panell/#arxiu');
+    await p.waitForSelector('[data-ax-desa]');
+    await p.click('label:has(input[name=ax-noves][value="0"]) span');
+    await p.click('[data-ax-desa]');
+    await p.waitForSelector('[data-ax]', { timeout: 20000 });
+    const nPend = await p.$$eval('[data-ax]', (e) => e.length);
+    ok(nPend === 6, 'les fotos de les carpetes «Per penjar» arriben per revisar (' + nPend + ')');
+    ok(await p.isVisible('#menu a[data-sec=arxiu] .badge'), 'el menú avisa que hi ha fotos per revisar');
+    await espera(500);
+    await captura(p, '17-arxiu-revisio');
+    const totesAx = await p.$$('[data-ax]'); await totesAx[totesAx.length - 1].click(); // en desmarquem una (la de P4)
+    await p.click('[data-ax-publica]');
+    await p.waitForSelector('.targeta.buit, [data-ax]', { timeout: 60000 });
+    await p.waitForFunction(() => (window.__panell.S.d.arxiu.pendents || []).length === 1, null, { timeout: 60000 });
+    const llista = await p.evaluate(() => { const l = window.__panell.S.d.playlists.find((x) => x.arxiuMes); return l && { nom: l.name, items: l.items.map((i) => i.kind + ':' + i.caption) }; });
+    ok(!!llista && /Arxiu fotogràfic · /.test(llista.nom), 'es crea la llista del mes: ' + (llista && llista.nom));
+    ok(!!llista && llista.items.some((i) => i.indexOf('collage:4t de primària') === 0), 'les 5 fotos de 4t surten en collages amb el nom del curs: ' + (llista && llista.items.join(', ')));
+    const pantallaTe = await p.evaluate(() => { const l = window.__panell.S.d.playlists.find((x) => x.arxiuMes); return window.__panell.S.d.screens[0].playlists.indexOf(l.id) >= 0; });
+    ok(pantallaTe, 'la llista del mes s\'assigna sola a les pantalles');
+    await tv.waitForFunction(() => { const c = window.__pantalla.config(); return c && c.items.some((i) => i.caption === '4t de primària'); }, null, { timeout: 30000 });
+    ok(true, 'la pantalla rep les fotos publicades de l\'arxiu');
+
     ok(errorsTv.length === 0, 'cap error de JavaScript a la pantalla' + (errorsTv.length ? ': ' + errorsTv.join(' | ') : ''));
     ok(errorsP.length === 0, 'cap error de JavaScript al panell' + (errorsP.length ? ': ' + errorsP.join(' | ') : ''));
   } catch (e) {

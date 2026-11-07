@@ -173,6 +173,8 @@ function accioImportaBustia_(req, u) {
 
 /** S'executa sol cada 10 minuts (activador): importa la bústia a la llista triada. */
 function revisaBustia() {
+  // Aprofitem aquest activador (cada 10 minuts) per mirar també l'arxiu fotogràfic
+  if (typeof revisaArxiu === 'function') revisaArxiu();
   const bd = llegeixBd_();
   const idLlista = bd.settings.bustiaPlaylistId;
   if (!idLlista || !troba_(bd.playlists, idLlista)) return;

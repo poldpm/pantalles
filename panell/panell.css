@@ -568,3 +568,7 @@ label.camp, .camp { font-size: 13px; letter-spacing: .01em; color: var(--text); 
 .disposicio:hover { border-color: var(--vora-forta); }
 .disposicio .mostra { position: relative; aspect-ratio: 16/9; overflow: hidden; }
 .disposicio span { display: block; padding: 5px 8px 7px; font-size: 12.5px; font-weight: 600; }
+
+/* Arxiu fotogràfic */
+.barra-arxiu { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 64px; z-index: 5; }
+@media (max-width: 860px) { .barra-arxiu { top: 56px; } .menu a:not(.menu-marca) { font-size: 9.5px; } }

@@ -113,7 +113,8 @@
   try { S.thumbs = JSON.parse(ls('pnt_mini') || '{}') || {}; } catch (e) { S.thumbs = {}; }
   function miniaturesQueFalten() {
     if (!S.d) return Promise.resolve(false);
-    var falten = S.d.media.map(function (m) { return m.id; }).filter(function (id) { return !S.thumbs[id]; });
+    var claus = S.d.media.map(function (m) { return m.id; }).concat(((S.d.arxiu && S.d.arxiu.pendents) || []).map(function (p) { return 'ax_' + p.id; }));
+    var falten = claus.filter(function (id) { return !S.thumbs[id]; });
     if (!falten.length) return Promise.resolve(false);
     var lots = [];
     for (var i = 0; i < falten.length; i += 150) lots.push(falten.slice(i, i + 150));
@@ -122,7 +123,7 @@
       rs.forEach(function (r) { Object.keys(r.thumbs).forEach(function (id) { S.thumbs[id] = r.thumbs[id]; algun = true; }); });
       // Netegem les que ja no existeixen i guardem (si hi cap)
       var vives = {};
-      S.d.media.forEach(function (m) { if (S.thumbs[m.id]) vives[m.id] = S.thumbs[m.id]; });
+      claus.forEach(function (id) { if (S.thumbs[id]) vives[id] = S.thumbs[id]; });
       S.thumbs = vives;
       ls('pnt_mini', JSON.stringify(vives));
       return algun;
@@ -402,7 +403,7 @@
     var h = (location.hash || '#inici').substr(1).split('/');
     return { sec: h[0] || 'inici', id: h[1] ? decodeURIComponent(h[1]) : null };
   }
-  var SECCIO_MENU = { inici: 'inici', pantalles: 'pantalles', pantalla: 'pantalles', llistes: 'llistes', llista: 'llistes', biblioteca: 'biblioteca', avisos: 'avisos', ajustos: 'ajustos', registre: 'ajustos' };
+  var SECCIO_MENU = { arxiu: 'arxiu', inici: 'inici', pantalles: 'pantalles', pantalla: 'pantalles', llistes: 'llistes', llista: 'llistes', biblioteca: 'biblioteca', avisos: 'avisos', ajustos: 'ajustos', registre: 'ajustos' };
   var VISTES = {};
   var rutaAnterior = '';
   function render(mantenirScroll) {
@@ -413,6 +414,13 @@
     rutaAnterior = clau;
     var scroll = window.scrollY;
     $$('#menu a[data-sec]').forEach(function (a) { a.classList.toggle('actiu', a.dataset.sec === SECCIO_MENU[r.sec]); });
+    var nArxiu = (S.d.arxiu && S.d.arxiu.on && S.d.arxiu.pendents) ? S.d.arxiu.pendents.length : 0;
+    var aArxiu = $('#menu a[data-sec=arxiu]');
+    if (aArxiu) {
+      var bA = $('.badge', aArxiu);
+      if (nArxiu && !bA) aArxiu.insertAdjacentHTML('beforeend', '<span class="badge accent">' + nArxiu + '</span>');
+      else if (bA) { if (nArxiu) bA.textContent = nArxiu; else bA.remove(); }
+    }
     var avisosActius = actius(S.d.alerts).length;
     var aAvisos = $('#menu a[data-sec=avisos]');
     var badge = $('.badge', aAvisos);
@@ -583,7 +591,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.5.0';
+  var VERSIO_SERVEI = '1.6.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -638,6 +646,8 @@
         }
       });
     });
+    var axp = S.d.arxiu && S.d.arxiu.on ? (S.d.arxiu.pendents || []).length : 0;
+    if (axp) alertes.unshift('Hi ha <b>' + axp + ' foto' + (axp > 1 ? 's' : '') + ' nova' + (axp > 1 ? 'es' : '') + '</b> de l\'arxiu fotogràfic per revisar. <a href="#arxiu">Revisa-les</a>.');
     if (alertes.length) html += '<div class="seccio"><h3>Cal revisar</h3><div class="pila">' + alertes.map(function (a) { return '<div class="avis-caixa">' + a + '</div>'; }).join('') + '</div></div>';
 
     html += '<div class="seccio"><h3>Ara mateix a les pantalles</h3>';
@@ -1018,6 +1028,7 @@
       '<div class="btns"><label class="interruptor" title="Si l\'atures, no es mostra enlloc"><input type="checkbox" data-l="on"' + (L.on !== false ? ' checked' : '') + '> Activa</label>' +
       '<button class="btn icona" data-accio="mes" aria-label="Més opcions">' + IC('puntets') + '</button></div></div>';
 
+    if (L.arxiuMes) html += '<div class="avis-caixa info" style="margin-bottom:16px">Aquesta llista es fa sola amb les fotos que publiques des de l\'<a href="#arxiu">Arxiu fotogràfic</a> aquest mes. Si hi canvies l\'ordre o en treus elements, es tornarà a refer quan es publiquin fotos noves. Sí que pots canviar a quines pantalles es mostra o aturar-la.</div>';
     html += '<div class="targeta pad pila" style="margin-bottom:16px"><div class="fila" style="align-items:start">' +
       '<div class="camp">Es mostra a<div class="chips" style="margin-top:4px">' + (pantalles.length ? pantalles.map(function (p) {
         var te = p.playlists.indexOf(L.id) >= 0;
@@ -1474,6 +1485,145 @@
    *  BIBLIOTECA
    * ---------------------------------------------------------------- */
   var filtreBib = { tipus: '', cerca: '' };
+  /* ------------------------------------------------------------------
+   *  ARXIU FOTOGRÀFIC (fotes que els cursos deixen a «Per penjar»)
+   * ---------------------------------------------------------------- */
+  var triadesArxiu = null; // ids seleccionats (per defecte, tots)
+  VISTES.arxiu = function () {
+    titol('Arxiu fotogràfic');
+    var ax = S.d.arxiu || {};
+    var admin = S.user && S.user.role === 'admin';
+    var urlCarpeta = 'https://drive.google.com/drive/folders/' + (ax.folderId || '');
+    var html = '<div class="capcalera"><div><h2>Arxiu fotogràfic</h2><p>Les fotos que cada curs deixa a la seva carpeta <b>«Per penjar»</b> arriben aquí soles. Les revises, i les que publiquis van a la llista del mes, amb el nom del curs.</p></div>' +
+      (ax.on ? '<div class="btns"><a class="btn" href="' + esc(urlCarpeta) + '" target="_blank" rel="noopener">' + IC('carpeta') + 'Obre l\'arxiu</a><button class="btn" data-ax-comprova>' + IC('recarrega') + 'Comprova ara</button>' + (admin ? '<button class="btn icona" data-ax-config aria-label="Configura">' + IC('ajustos') + '</button>' : '') + '</div>' : '') + '</div>';
+
+    if (!ax.on) {
+      html += '<div class="targeta pad pila" style="max-width:760px">' + (admin ? htmlConfigArxiu(ax, true) : '<p style="margin:0">Un administrador ha d\'activar l\'arxiu fotogràfic a aquesta pàgina.</p>') + '</div>';
+      $('#vista').innerHTML = html;
+      activaConfigArxiu($('#vista'), true);
+      return;
+    }
+
+    var pend = ax.pendents || [];
+    if (!triadesArxiu) triadesArxiu = pend.map(function (p) { return p.id; });
+    triadesArxiu = triadesArxiu.filter(function (id) { return pend.some(function (p) { return p.id === id; }); });
+
+    html += '<div class="resum" style="margin-top:0">' +
+      '<div class="targeta xifra' + (pend.length ? ' alerta' : '') + '"><div class="n">' + pend.length + '</div><div class="e">per revisar</div></div>' +
+      '<a class="targeta xifra" href="' + (llistaArxiuMes() ? '#llista/' + llistaArxiuMes().id : '#llistes') + '"><div class="n">' + (ax.publicadesMes || 0) + '</div><div class="e">publicades aquest mes</div></a>' +
+      '<div class="targeta xifra"><div class="n">' + (ax.carpetes || 0) + '</div><div class="e">carpetes de curs</div></div></div>' +
+      '<div class="subtil" style="margin:-8px 0 18px">Última comprovació: ' + (ax.darrera ? dataHora(ax.darrera) : 'encara cap') + '. Es comprova sola cada 10 minuts.</div>' +
+      (ax.error ? '<div class="avis-caixa error" style="margin-bottom:18px"><b>No s\'ha pogut llegir l\'arxiu:</b> ' + esc(ax.error) + '</div>' : '');
+
+    if (!pend.length) {
+      html += '<div class="targeta buit"><div class="gran-ic">' + IC('fet', 28) + '</div><h3>No hi ha fotos noves per revisar</h3><p>Quan algun curs deixi fotos a la seva carpeta «Per penjar», sortiran aquí.</p></div>';
+    } else {
+      html += '<div class="barra-arxiu targeta pad"><b data-ax-n></b><div class="btns"><button class="btn petit" data-ax-totes>Selecciona-les totes</button><button class="btn petit" data-ax-cap>Cap</button>' +
+        '<button class="btn perill" data-ax-descarta>' + IC('tanca') + 'Descarta</button><button class="btn primari" data-ax-publica>' + IC('fet') + 'Publica les seleccionades</button></div></div>';
+      var perCurs = {}, ordre = [];
+      pend.forEach(function (p) { var k = p.curs || 'Arxiu'; if (!perCurs[k]) { perCurs[k] = []; ordre.push(k); } perCurs[k].push(p); });
+      ordre.forEach(function (curs) {
+        var fotos = perCurs[curs];
+        html += '<div class="seccio"><h3>' + esc(curs) + (fotos[0].etapa ? ' <span class="molt-subtil" style="text-transform:none;letter-spacing:0;font-weight:600">· ' + esc(fotos[0].etapa) + '</span>' : '') +
+          ' <span class="badge">' + fotos.length + '</span></h3><div class="mitjans">' + fotos.map(function (p) {
+            var th = S.thumbs['ax_' + p.id], triat = triadesArxiu.indexOf(p.id) >= 0;
+            var petita = p.w && p.h && Math.max(1920 / p.w, 1080 / p.h) > 1.6;
+            return '<button type="button" class="mitja' + (triat ? ' triat' : '') + '" data-ax="' + p.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : IC('biblioteca')) + '</div>' +
+              '<span class="marca">' + (triat ? IC('fet', 16) : '') + '</span>' +
+              '<div class="peu"><b title="' + esc(p.name) + '">' + esc(p.name) + '</b><span class="molt-subtil">' + (p.at ? dataHora(p.at) : '') + (p.w ? ' · ' + p.w + '×' + p.h : '') + '</span>' +
+              (petita ? '<span class="badge avis" style="align-self:flex-start;margin-top:3px">Poca resolució</span>' : '') + '</div></button>';
+          }).join('') + '</div></div>';
+      });
+    }
+    $('#vista').innerHTML = html;
+
+    var pintaN = function () {
+      var n = $('[data-ax-n]');
+      if (n) n.textContent = triadesArxiu.length + ' de ' + pend.length + ' seleccionades';
+      $$('[data-ax-publica],[data-ax-descarta]').forEach(function (b) { b.disabled = !triadesArxiu.length; });
+    };
+    pintaN();
+    $$('[data-ax]').forEach(function (b) {
+      b.onclick = function () {
+        var id = b.dataset.ax, i = triadesArxiu.indexOf(id);
+        if (i >= 0) triadesArxiu.splice(i, 1); else triadesArxiu.push(id);
+        b.classList.toggle('triat', i < 0);
+        $('.marca', b).innerHTML = i < 0 ? IC('fet', 16) : '';
+        pintaN();
+      };
+    });
+    var tt = $('[data-ax-totes]'); if (tt) tt.onclick = function () { triadesArxiu = pend.map(function (p) { return p.id; }); render(true); };
+    var cap = $('[data-ax-cap]'); if (cap) cap.onclick = function () { triadesArxiu = []; render(true); };
+    var pub = $('[data-ax-publica]');
+    if (pub) pub.onclick = function () {
+      var ids = triadesArxiu.slice(), fetes = 0, errors = 0;
+      pub.disabled = true;
+      var cadena = Promise.resolve();
+      for (var i = 0; i < ids.length; i += 4) (function (tros) {
+        cadena = cadena.then(function () {
+          pub.innerHTML = '<span class="roda petita"></span> Publicant ' + Math.min(fetes + errors + tros.length, ids.length) + ' de ' + ids.length + '…';
+          return crida('arxiuPublica', { ids: tros }, { desa: true, timeout: 300000 }).then(function (r) { fetes += r.publicades; errors += r.errors; });
+        });
+      })(ids.slice(i, i + 4));
+      cadena.then(function () { return carrega(); }).then(function () {
+        triadesArxiu = null;
+        toast(fetes + ' foto' + (fetes === 1 ? '' : 's') + ' publicada' + (fetes === 1 ? '' : 'es') + ' a la llista del mes' + (errors ? ' · ' + errors + ' no s\'han pogut copiar' : ''), errors ? 'error' : 'ok', 6000);
+        render(true);
+      }, function () { carrega().then(function () { render(true); }); });
+    };
+    var desc = $('[data-ax-descarta]');
+    if (desc) desc.onclick = function () {
+      confirma('Descartar ' + triadesArxiu.length + ' foto' + (triadesArxiu.length === 1 ? '' : 's'), 'No es mostraran a les pantalles. A l\'arxiu del Drive no es toca res.', { ok: 'Descarta', perill: true }).then(function (si) {
+        if (!si) return;
+        crida('arxiuDescarta', { ids: triadesArxiu }, { desa: true }).then(function () { return carrega(); }).then(function () { triadesArxiu = null; toast('Descartades', 'ok'); render(true); });
+      });
+    };
+    var comp = $('[data-ax-comprova]');
+    if (comp) comp.onclick = function () {
+      comp.disabled = true; comp.innerHTML = '<span class="roda petita"></span> Comprovant…';
+      crida('arxiuEscaneja', {}, { timeout: 300000 }).then(function (r) { return carrega().then(function () { toast(r.nous ? r.nous + ' fotos noves' : 'No hi ha fotos noves', 'ok'); render(true); }); },
+        function () { carrega().then(function () { render(true); }); });
+    };
+    var cf = $('[data-ax-config]');
+    if (cf) cf.onclick = function () {
+      obreModal({ titol: 'Configuració de l\'arxiu fotogràfic', classe: 'ample', cos: htmlConfigArxiu(ax, false), enObrir: function (el) { activaConfigArxiu(el, false); } });
+    };
+  };
+
+  function llistaArxiuMes() {
+    var mes = S.d.arxiu && S.d.arxiu.mes;
+    return S.d.playlists.filter(function (l) { return l.arxiuMes === mes; })[0] || null;
+  }
+
+  function htmlConfigArxiu(ax, primer) {
+    var totes = !ax.screens || ax.screens === 'all';
+    return '<label class="camp">Carpeta de l\'arxiu fotogràfic <span class="ajuda">Enganxa l\'enllaç de la carpeta principal. Es busquen totes les subcarpetes «Per penjar».</span>' +
+      '<input type="url" data-ax-carpeta value="https://drive.google.com/drive/folders/' + esc(ax.folderId || '') + '"></label>' +
+      '<div class="camp">A quines pantalles es mostra la llista del mes<div class="pila" style="gap:8px;font-weight:500;margin-top:4px"><label class="interruptor"><input type="checkbox" data-ax-totes-p' + (totes ? ' checked' : '') + '> <b>Totes</b></label>' +
+      S.d.screens.map(function (p) { return '<label class="interruptor"><input type="checkbox" data-ax-p="' + p.id + '"' + (totes || (ax.screens || []).indexOf(p.id) >= 0 ? ' checked' : '') + (totes ? ' disabled' : '') + '> ' + esc(p.name) + '</label>'; }).join('') + '</div></div>' +
+      (primer ? '<div class="camp">Què fem amb les fotos que ja hi ha ara a les carpetes?<div class="segment" style="margin-top:4px"><label><input type="radio" name="ax-noves" value="1" checked><span>Només les noves a partir d\'ara</span></label><label><input type="radio" name="ax-noves" value="0"><span>També les que ja hi ha</span></label></div></div>' : '') +
+      '<div class="btns">' + (primer ? '<button class="btn primari" data-ax-desa="1">' + IC('fet') + 'Activa l\'arxiu fotogràfic</button>' :
+        '<button class="btn perill esq" data-ax-atura>' + IC('atura') + 'Atura</button><button class="btn primari" data-ax-desa="1">Desa</button>') + '</div>';
+  }
+
+  function activaConfigArxiu(el, primer) {
+    var tp = $('[data-ax-totes-p]', el);
+    if (!tp) return;
+    tp.onchange = function () { var t = this.checked; $$('[data-ax-p]', el).forEach(function (c) { c.disabled = t; if (t) c.checked = true; }); };
+    var desa = function (on) {
+      var dades = {
+        on: on, folderId: $('[data-ax-carpeta]', el).value.trim(),
+        screens: tp.checked ? 'all' : $$('[data-ax-p]:checked', el).map(function (c) { return c.dataset.axP; }),
+        nomesNoves: primer ? $('input[name=ax-noves]:checked', el).value === '1' : false
+      };
+      crida('arxiuConfig', { arxiu: dades }, { desa: true }).then(function () {
+        return on && primer ? crida('arxiuEscaneja', {}, { timeout: 300000 }).catch(function () {}) : null;
+      }).then(function () { return carrega(); }).then(function () { tancaModal(); toast(on ? 'Arxiu fotogràfic actiu' : 'Arxiu fotogràfic aturat', 'ok'); render(true); });
+    };
+    $('[data-ax-desa]', el).onclick = function () { this.disabled = true; this.innerHTML = '<span class="roda petita"></span> Un moment…'; desa(true); };
+    var at = $('[data-ax-atura]', el); if (at) at.onclick = function () { desa(false); };
+  }
+
   VISTES.biblioteca = function () {
     titol('Biblioteca');
     var d = S.d;

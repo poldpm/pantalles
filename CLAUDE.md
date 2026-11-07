@@ -48,6 +48,10 @@ ha de ser en català, clar i sense sorpreses.
     3 minuts si el programa ha canviat i recarrega només l'iframe. Les ordres del panell, la recàrrega
     de les 4 h i el vigilant també recarreguen només l'iframe. Canvia `capa.js` només si és imprescindible.
     El contingut no depèn d'això: arriba per `sync`.
+- `apps-script/Arxiu.gs`: arxiu fotogràfic. Busca les carpetes «Per penjar» (Etapa → Curs → Per penjar) dins
+  la carpeta de l'arxiu, cada 10 min (dins l'activador `revisaBustia`) posa les fotos noves a `bd.arxiu.pendents`;
+  en publicar en fa una còpia de 2560 px (miniatura gran del Drive, ja girada) i refà la llista del mes
+  (`playlist.arxiuMes`), amb fotos soles o collages per curs i els cursos alternats.
 - `panell/`: SPA vanilla JS. Desa automàticament, amb control de conflictes per llista (`v`).
   - Converteix els PDF en imatges amb pdf.js, redueix les fotos a 2560 px i fa les miniatures al navegador.
 - `comu/`: `api.js` (client, horaris, utilitats), `diapos.js/css` (diapositives de text,
