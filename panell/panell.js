@@ -701,7 +701,7 @@
     obreModal({
       titol: 'Vista prèvia · ' + p.name,
       classe: 'molt-ample',
-      cos: '<div class="marc-previa' + (vertical ? ' vertical' : '') + '"><iframe title="Vista prèvia" src="../pantalla/?preview=' + encodeURIComponent(id) + '"></iframe></div>' +
+      cos: '<div class="marc-previa' + (vertical ? ' vertical' : '') + '"><iframe title="Vista prèvia" src="../pantalla/reproductor.html?preview=' + encodeURIComponent(id) + '"></iframe></div>' +
         '<p class="subtil" style="margin-bottom:0">És exactament el que mostra la pantalla ara (segons l\'hora i la programació). Els fitxers es descarreguen al moment, pot trigar uns segons. Els avisos també hi surten.</p>',
       peu: '<button class="btn" data-ant>‹ Anterior</button><button class="btn" data-seg>Següent ›</button><button class="btn primari" data-tanca>Tanca</button>',
       enObrir: function (el) {

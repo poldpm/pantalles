@@ -32,7 +32,7 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     const tv = await ctxTv.newPage();
     const errorsTv = [];
     tv.on('pageerror', (e) => errorsTv.push(e.message));
-    await tv.goto(BASE + '/pantalla/?_sync=3');
+    await tv.goto(BASE + '/pantalla/reproductor.html?_sync=3');
     await tv.waitForSelector('.sistema .codi', { timeout: 10000 });
     const codi = (await tv.textContent('.sistema .codi')).replace(/\D/g, '');
     ok(/^\d{6}$/.test(codi), 'mostra el codi de vinculació ' + codi);

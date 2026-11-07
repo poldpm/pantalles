@@ -42,9 +42,12 @@ ha de ser en català, clar i sense sorpreses.
     continua funcionant sense xarxa.
   - Avalua la programació amb l'hora de l'escola (`Europe/Madrid` + desfasament del servidor).
   - Té un vigilant que es recupera si s'encalla i es recarrega cada dia a les 4 h.
-  - Cada 3 minuts comprova si s'han publicat fitxers nous del programa; si n'hi ha, es recarrega sol
-    (si està en pantalla completa «manual», espera a les 4 h per no perdre-la). Els canvis de contingut
-    no depenen d'això: arriben per `sync`.
+  - `pantalla/index.html` + `capa.js` = capa exterior: és la que es posa en pantalla completa i NO es
+    recarrega mai sola mentre ho està (en Pol no vol que la pantalla en surti mai si no és a mà; Esc/F11
+    sí que en surten). El reproductor real és `reproductor.html` dins un iframe: la capa comprova cada
+    3 minuts si el programa ha canviat i recarrega només l'iframe. Les ordres del panell, la recàrrega
+    de les 4 h i el vigilant també recarreguen només l'iframe. Canvia `capa.js` només si és imprescindible.
+    El contingut no depèn d'això: arriba per `sync`.
 - `panell/`: SPA vanilla JS. Desa automàticament, amb control de conflictes per llista (`v`).
   - Converteix els PDF en imatges amb pdf.js, redueix les fotos a 2560 px i fa les miniatures al navegador.
 - `comu/`: `api.js` (client, horaris, utilitats), `diapos.js/css` (diapositives de text,

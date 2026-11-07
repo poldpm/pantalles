@@ -7,10 +7,14 @@
  * ===================================================================== */
 (function () {
   'use strict';
-  var VERSIO = '1.6.0';
+  var VERSIO = '1.7.0';
   var Pnt = window.Pnt;
   var qs = new URLSearchParams(location.search);
   var PREVIA = qs.get('preview');            // id de pantalla (vista prèvia des del panell)
+  // Dins la capa exterior (pantalla/index.html): ella s'encarrega de la pantalla completa
+  // i de les actualitzacions del programa, i així una recàrrega no la treu de la pantalla completa.
+  var ENMARC = !PREVIA && window.parent !== window;
+  function avisaMarc(missatge) { try { window.parent.postMessage(missatge, location.origin); } catch (e) { /* res */ } }
   var INTERVAL_SYNC = Math.max(2000, (parseInt(qs.get('_sync'), 10) || 30) * 1000); // _sync només per a proves
   var $ = function (id) { return document.getElementById(id); };
   var escenari = $('escenari'), contingut = $('contingut'), sup = $('capes-sup');
@@ -844,7 +848,7 @@
     } else location.reload();
   }
   var cadaProg = Math.max(3000, (parseInt(qs.get('_prog'), 10) || 180) * 1000); // _prog només per a proves
-  if (!PREVIA) { setTimeout(comprovaPrograma, Math.min(20000, cadaProg)); setInterval(comprovaPrograma, cadaProg); }
+  if (!PREVIA && !ENMARC) { setTimeout(comprovaPrograma, Math.min(20000, cadaProg)); setInterval(comprovaPrograma, cadaProg); }
 
   var darreraRecarrega = Date.now();
   function vigilant() {
@@ -898,6 +902,17 @@
         return r && r.then ? r.then(amagaPista) : (amagaPista(), Promise.resolve());
       } catch (e) { return Promise.reject(e); }
     };
+    if (ENMARC) {
+      // La capa exterior posa la pantalla completa: li passem cada tecla o clic.
+      document.addEventListener('click', function () { avisaMarc({ tipus: 'gest' }); });
+      document.addEventListener('keydown', function (e) { avisaMarc({ tipus: 'gest', tecla: e.key }); }, true);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') seguent();
+        if (e.key === 'ArrowLeft') seguent(-1);
+        if (e.key === 'i' || e.key === 'I' || e.key === 'Info' || e.key === 'ColorF0Red') mostraInfo();
+      });
+      return;
+    }
     // Qualsevol tecla o clic posa la pantalla completa (els navegadors només ho permeten així).
     document.addEventListener('click', function () { pantallaCompleta().catch(function () {}); });
     document.addEventListener('keydown', function () { pantallaCompleta().catch(function () {}); }, true);

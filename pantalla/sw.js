@@ -1,8 +1,8 @@
 /* PANTALLES · Service worker del reproductor
  * Guarda l'aplicació perquè la pantalla torni a arrencar encara que no hi hagi xarxa.
  * Estratègia: primer la xarxa (així les actualitzacions arriben soles), si falla, la còpia. */
-var CAU = 'pantalla-v3';
-var FITXERS = ['./', './index.html', './pantalla.js', './pantalla.css', './manifest.webmanifest',
+var CAU = 'pantalla-v4';
+var FITXERS = ['./', './index.html', './capa.js', './reproductor.html', './pantalla.js', './pantalla.css', './manifest.webmanifest',
   '../config.js', '../comu/api.js', '../comu/diapos.js', '../comu/diapos.css', '../comu/marca.css',
   '../comu/fonts/titillium-web-400.woff2', '../comu/fonts/titillium-web-600.woff2', '../comu/fonts/titillium-web-700.woff2', '../icona.svg'];
 

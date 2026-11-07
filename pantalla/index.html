@@ -10,18 +10,20 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="../icona.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../comu/marca.css">
-<link rel="stylesheet" href="../comu/diapos.css">
-<link rel="stylesheet" href="pantalla.css">
+<style>
+  /* Capa exterior: és la que es posa en pantalla completa i no es recarrega mai.
+     El reproductor de veritat va a dins (reproductor.html) i es pot actualitzar sense perdre-la. */
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body.sense-cursor, body.sense-cursor * { cursor: none !important; }
+  #reproductor { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: 0; background: #000; }
+  #pista { position: fixed; left: 50%; bottom: 13vmin; transform: translateX(-50%); z-index: 10; font-family: "Titillium Web", "Segoe UI", sans-serif;
+    font-weight: 600; font-size: 2.8vmin; color: #fff; background: #2D2926; border-left: .84vmin solid #FF004E; padding: 1.9vmin 3.9vmin; white-space: nowrap; }
+  #pista[hidden] { display: none; }
+</style>
 </head>
 <body>
-<div id="escenari" class="escenari">
-  <div id="contingut" class="contingut"></div>
-  <div id="capes-sup"></div>
-</div>
-<div id="missatge-inici" class="inici"><div class="inici-roda"></div><div>Engegant…</div></div>
-<script src="../config.js"></script>
-<script src="../comu/api.js"></script>
-<script src="../comu/diapos.js"></script>
-<script src="pantalla.js"></script>
+<iframe id="reproductor" title="Pantalla" allow="autoplay; fullscreen; encrypted-media; screen-wake-lock"></iframe>
+<div id="pista" hidden>Prem qualsevol botó per posar la pantalla completa</div>
+<script src="capa.js"></script>
 </body>
 </html>
