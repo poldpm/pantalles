@@ -7,7 +7,7 @@
  * ===================================================================== */
 (function () {
   'use strict';
-  var VERSIO = '1.0.0';
+  var VERSIO = '1.6.0';
   var Pnt = window.Pnt;
   var qs = new URLSearchParams(location.search);
   var PREVIA = qs.get('preview');            // id de pantalla (vista prèvia des del panell)
