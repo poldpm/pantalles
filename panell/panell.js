@@ -1254,6 +1254,8 @@
         '<div class="camp" data-nomes="foto">Foto de fons<div class="btns"><span data-fons-nom class="subtil">' + (t.bgMediaId ? esc((troba(S.d.media, t.bgMediaId) || {}).name || '') : 'Cap (cal triar-ne una)') + '</span>' +
         '<button type="button" class="btn petit" data-tria-fons>Tria…</button></div></div>' +
         '<label class="camp" data-nomes="foto">Enquadrament de la foto <span class="ajuda">Quina part es veu quan s\'ha de retallar.</span><select data-t="focus">' + '<option value="">Centre</option><option value="top"' + (t.focus === 'top' ? ' selected' : '') + '>A dalt (caps i cares)</option><option value="bottom"' + (t.focus === 'bottom' ? ' selected' : '') + '>A baix</option>' + '</select></label>' +
+        '<label class="camp" data-nomes="foto">On va la foto<select data-t="fotoMode"><option value="">Automàtic (horitzontal a tota la pantalla, vertical a la dreta)</option>' +
+        '<option value="ample"' + (t.fotoMode === 'ample' ? ' selected' : '') + '>A tota la pantalla, sota el bloc granat</option><option value="dreta"' + (t.fotoMode === 'dreta' ? ' selected' : '') + '>Només a la meitat dreta</option></select></label>' +
         '<div class="fila"><label class="camp" data-nomes="granat paper">Alineació<select data-t="align"><option value="left"' + (t.align !== 'center' ? ' selected' : '') + '>A l\'esquerra</option><option value="center"' + (t.align === 'center' ? ' selected' : '') + '>Centrat</option></select></label>' +
         '<label class="camp">Mida de la lletra<input type="range" min="60" max="160" step="10" data-t="size" value="' + (t.size || 100) + '"></label></div>';
     }
@@ -1414,7 +1416,11 @@
     if (!caixa) return;
     var id = null, w = 1920, h = 1080;
     if (c.kind === 'media') id = c.mediaId;
-    if (c.kind === 'text' && c.text && c.text.template === 'foto') { id = c.text.bgMediaId; w = 960; }
+    if (c.kind === 'text' && c.text && c.text.template === 'foto') {
+      id = c.text.bgMediaId;
+      var ample = c.text.fotoMode === 'ample' || (c.text.fotoMode !== 'dreta' && Pnt.diapo.esHoritzontal(ctxPanell(), id));
+      w = ample ? 1920 : 960;
+    }
     var m = id ? troba(S.d.media, id) : null;
     if (!m || m.kind !== 'image' || !m.w || !m.h || (c.kind === 'media' && c.fit === 'contain')) { caixa.hidden = true; return; }
     var amplia = Math.max(w / m.w, h / m.h);
@@ -1428,6 +1434,7 @@
     return {
       ara: araServidor,
       urlMitja: function (id) { return S.thumbs[id] || null; },
+      metaMitja: function (id) { return troba(S.d.media, id); },
       logo: { color: S.logos.color || null, neg: S.logos.neg || null },
       escola: (S.d && S.d.settings.schoolName) || 'Vedruna Escorial Vic'
     };

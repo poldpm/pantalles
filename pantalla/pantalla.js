@@ -524,6 +524,7 @@
     return {
       ara: ara,
       urlMitja: function (id) { return urls[id] || null; },
+      metaMitja: function (id) { return config && config.media[id]; },
       logo: { color: logoUrl(false), neg: logoUrl(true) },
       escola: (config && config.settings.schoolName) || 'Vedruna Escorial Vic'
     };

@@ -209,6 +209,7 @@ function netejaItem_(it, bd) {
     r.text = {
       template: ['granat', 'paper', 'foto', 'esdeveniment'].indexOf(t.template) >= 0 ? t.template : 'granat',
       focus: ['top', 'bottom'].indexOf(t.focus) >= 0 ? t.focus : '',
+      fotoMode: ['ample', 'dreta'].indexOf(t.fotoMode) >= 0 ? t.fotoMode : '',
       label: text_(t.label, 40), place: text_(t.place, 120),
       title: text_(t.title, 200), body: text_(t.body, 1500), footer: text_(t.footer, 200),
       bg: color_(t.bg, '#c8102e'), bg2: color_(t.bg2, ''), fg: color_(t.fg, '#ffffff'),

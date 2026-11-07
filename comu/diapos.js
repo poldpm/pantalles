@@ -91,6 +91,10 @@
       var f = el('div', 'dp-foto');
       f.style.backgroundImage = 'url("' + ctx.urlMitja(t.bgMediaId) + '")';
       f.style.backgroundPosition = D.posicio(t.focus);
+      // Foto horitzontal: a tota la pantalla, amb el bloc granat a sobre.
+      // Foto vertical: només a la meitat dreta (així no s'ha d'ampliar tant).
+      var ample = t.fotoMode === 'ample' || (t.fotoMode !== 'dreta' && D.esHoritzontal(ctx, t.bgMediaId));
+      if (ample) n.classList.add('dp-foto-ample');
       n.appendChild(f);
       var panell = el('div', 'dp-panell');
       panell.appendChild(blocText(t, k, { titol: 9.5, text: 4.6 }));
@@ -248,6 +252,13 @@
     g.style.gridTemplateColumns = 'repeat(' + files[0].split(' ').length + ', 1fr)';
     g.style.gridTemplateRows = 'repeat(' + files.length + ', 1fr)';
   }
+
+  /** Diu si una foto és horitzontal (si no se'n sap la mida, ho suposem). */
+  D.esHoritzontal = function (ctx, id) {
+    var m = ctx && ctx.metaMitja ? ctx.metaMitja(id) : null;
+    if (!m || !m.w || !m.h) return true;
+    return m.w / m.h >= 1.15;
+  };
 
   /** Enquadrament: quina part de la foto es veu quan s'ha de retallar. */
   D.posicio = function (focus) { return focus === 'top' ? 'center 18%' : focus === 'bottom' ? 'center 82%' : 'center center'; };

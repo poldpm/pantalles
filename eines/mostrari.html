@@ -32,7 +32,7 @@
     clock: { kind: 'clock', text: { title: 'Bon dia' } },
     countdown: { kind: 'countdown', text: { label: 'Compte enrere', title: 'Festival de Nadal', date: d, time: '18:00' } }
   };
-  var ctx = { ara: function () { return Date.now(); }, urlMitja: function () { return foto; }, logo: { color: q.get('logo') || null, neg: q.get('logoneg') || null }, escola: 'Vedruna Escorial Vic' };
+  var ctx = { ara: function () { return Date.now(); }, urlMitja: function () { return foto; }, metaMitja: function () { return q.get('fw') ? { w: +q.get('fw'), h: +q.get('fh') } : null; }, logo: { color: q.get('logo') || null, neg: q.get('logoneg') || null }, escola: 'Vedruna Escorial Vic' };
   if (p === 'peu') {
     c.style.background = 'url("' + foto + '") center/cover';
     Pnt.diapo.escala(c, w, h);
