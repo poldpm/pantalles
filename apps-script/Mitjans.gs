@@ -192,7 +192,11 @@ function accioEsborraMitja_(req, u) {
     bd.playlists.forEach(function (l) {
       const abans = l.items.length;
       l.items = l.items.filter(function (it) { return it.mediaId !== req.id; });
-      l.items.forEach(function (it) { if (it.text && it.text.bgMediaId === req.id) it.text.bgMediaId = ''; });
+      l.items.forEach(function (it) {
+        if (it.text && it.text.bgMediaId === req.id) it.text.bgMediaId = '';
+        if (it.kind === 'collage') it.photos = (it.photos || []).filter(function (x) { return x !== req.id; });
+      });
+      l.items = l.items.filter(function (it) { return it.kind !== 'collage' || (it.photos || []).length >= 2; });
       if (l.items.length !== abans) l.v = (l.v || 0) + 1;
     });
     if (bd.settings.logoMediaId === req.id) bd.settings.logoMediaId = '';

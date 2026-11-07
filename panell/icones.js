@@ -47,7 +47,8 @@
     fitxer: '<path d="M14 2H5v20h14V7z"/><path d="M14 2v5h5"/>',
     copia: '<rect x="8" y="8" width="13" height="13"/><path d="M4 16V4h12"/>',
     qr: '<path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v3M14 20h3M20 20v1"/>',
-    cerca: '<circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/>'
+    cerca: '<circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/>',
+    collage: '<rect x="3" y="3" width="10" height="18"/><rect x="15" y="3" width="6" height="8"/><rect x="15" y="13" width="6" height="8"/>'
   };
   /** Retorna l'SVG d'una icona. mida en px (per defecte 18). */
   window.IC = function (nom, mida, classe) {

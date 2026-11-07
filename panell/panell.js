@@ -458,12 +458,13 @@
   function connectada(p) { var st = S.d.status[p.id]; return !!(st && st.seen && araServidor() - st.seen < 100000); }
 
   var ICONES = { media: IC('biblioteca'), text: IC('text'), web: IC('web'), youtube: IC('play'), clock: IC('rellotge'), countdown: IC('compte') };
-  var NOMS_TIPUS = { text: 'Text', web: 'Web', youtube: 'YouTube', clock: 'Rellotge', countdown: 'Compte enrere', image: 'Foto', video: 'Vídeo' };
+  var NOMS_TIPUS = { collage: 'Collage', text: 'Text', web: 'Web', youtube: 'YouTube', clock: 'Rellotge', countdown: 'Compte enrere', image: 'Foto', video: 'Vídeo' };
 
   function nomItem(it) {
     if (it.name) return it.name;
     if (it.kind === 'media') { var m = troba(S.d.media, it.mediaId); return m ? m.name : '(fitxer esborrat)'; }
     if (it.kind === 'clock') return (it.text && it.text.title) || 'Rellotge i data';
+    if (it.kind === 'collage') return it.caption ? it.caption.split('\n')[0] : 'Collage de ' + (it.photos || []).length + ' fotos';
     if (it.text && it.text.title) return it.text.title;
     if (it.url) return it.url.replace(/^https?:\/\/(www\.)?/, '').substr(0, 60);
     return NOMS_TIPUS[it.kind] || it.kind;
@@ -480,7 +481,7 @@
       return '<div class="miniatura ' + (classe || '') + '" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : IC('biblioteca')) +
         (m && m.kind === 'video' ? '<span class="tipus">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') + '</div>';
     }
-    if (it.kind === 'text' || it.kind === 'clock' || it.kind === 'countdown') {
+    if (it.kind === 'text' || it.kind === 'clock' || it.kind === 'countdown' || it.kind === 'collage') {
       var clau = 'd' + (++comptadorDiapos);
       registreDiapos[clau] = it;
       return '<div class="miniatura diapo ' + (classe || '') + '" data-diapo="' + clau + '"></div>';
@@ -582,7 +583,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.2.0';
+  var VERSIO_SERVEI = '1.4.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -1040,7 +1041,7 @@
     }).join('') + '</div>';
     if (!L.items.length) html += '<div class="targeta buit" style="margin-bottom:10px"><div class="gran-ic">' + IC('mes') + '</div><h3>Llista buida</h3><p>Afegeix-hi fotos, vídeos, un PDF o una presentació exportada del Canva, textos o pàgines web.</p></div>';
 
-    html += '<div class="afegir-barra" data-zona><button class="btn primari" data-afegeix="pujar">' + IC('pujar') + 'Pujar fitxers</button><button class="btn" data-afegeix="biblioteca">' + IC('biblioteca') + 'De la biblioteca</button>' +
+    html += '<div class="afegir-barra" data-zona><button class="btn primari" data-afegeix="pujar">' + IC('pujar') + 'Pujar fitxers</button><button class="btn" data-afegeix="biblioteca">' + IC('biblioteca') + 'De la biblioteca</button><button class="btn" data-afegeix="collage">' + IC('collage') + 'Collage</button>' +
       '<button class="btn" data-afegeix="text">' + IC('text') + 'Text</button><button class="btn" data-afegeix="web">' + IC('web') + 'Pàgina web</button><button class="btn" data-afegeix="youtube">' + IC('play') + 'YouTube</button>' +
       '<button class="btn" data-afegeix="clock">' + IC('rellotge') + 'Rellotge</button><button class="btn" data-afegeix="countdown">' + IC('compte') + 'Compte enrere</button>' +
       '<span class="molt-subtil" style="align-self:center">o arrossega fitxers aquí</span></div>';
@@ -1142,7 +1143,13 @@
           canviEdicio(); render(true); toast(ids.length + ' afegit' + (ids.length > 1 ? 's' : ''), 'ok');
         });
         var nou = itemNou(t);
-        editaItem(nou, function (fet) { L.items.push(Object.assign(nou, fet)); canviEdicio(); render(true); }, true);
+        var obre = function () { editaItem(nou, function (fet) { L.items.push(Object.assign(nou, fet)); canviEdicio(); render(true); }, true); };
+        if (t === 'collage') return triaMitjans({ multi: true, kind: 'image', titol: 'Tria de 2 a 6 fotos per al collage' }).then(function (ids) {
+          if (!ids || !ids.length) return;
+          nou.photos = ids.slice(0, 6);
+          obre();
+        });
+        obre();
       };
     });
     zonaArrossegar($('[data-zona]'), function (files) { desaEdicioAra().then(function () { puja(files, L.id); }); });
@@ -1156,6 +1163,7 @@
     if (kind === 'countdown') it.text = { label: 'Compte enrere', title: '', date: '', time: '', footer: '' };
     if (kind === 'web') { it.url = ''; it.zoom = 100; it.reload = 0; }
     if (kind === 'youtube') { it.url = ''; it.duration = 60; }
+    if (kind === 'collage') { it.photos = []; it.layout = ''; it.caption = ''; it.label = ''; }
     return it;
   }
 
@@ -1219,7 +1227,7 @@
     var c = copia(it);
     var m = c.kind === 'media' ? troba(S.d.media, c.mediaId) : null;
     var esVideo = m && m.kind === 'video';
-    var titols = { media: esVideo ? 'Vídeo' : 'Foto', text: 'Diapositiva', web: 'Pàgina web', youtube: 'Vídeo de YouTube', clock: 'Rellotge i data', countdown: 'Compte enrere' };
+    var titols = { collage: 'Collage', media: esVideo ? 'Vídeo' : 'Foto', text: 'Diapositiva', web: 'Pàgina web', youtube: 'Vídeo de YouTube', clock: 'Rellotge i data', countdown: 'Compte enrere' };
     if (c.text && c.kind === 'text' && !c.text.template) c.text.template = 'granat';
     var t = c.text || {};
     var cos = '<div class="editor-graella"><div class="pila">';
@@ -1257,6 +1265,22 @@
     if (c.kind === 'youtube') {
       cos += '<label class="camp">Enllaç de YouTube (vídeo o llista)<input type="url" data-u="url" value="' + esc(c.url) + '" placeholder="https://www.youtube.com/watch?v=…" autofocus></label>' +
         '<div class="avis-caixa info" style="font-size:13px">Necessita internet. Si el vídeo és de l\'escola, és millor pujar-lo com a fitxer: així funciona sempre, fins i tot sense xarxa.</div>';
+    }
+    if (c.kind === 'collage') {
+      var disp = Pnt.diapo.COLLAGES[Math.max(2, Math.min(6, (c.photos || []).length))] || [];
+      cos += '<div class="camp">Fotos <span class="ajuda">De 2 a 6. Fes servir les fletxes per canviar l\'ordre: la primera és la més gran.</span>' +
+        '<div class="collage-fotos">' + (c.photos || []).map(function (id, i) {
+          var th = S.thumbs[id];
+          return '<div class="collage-foto" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '"><span class="num">' + (i + 1) + '</span>' +
+            '<div class="accions-foto"><button type="button" data-cf-esq="' + i + '" aria-label="Abans"' + (i === 0 ? ' disabled' : '') + '>' + IC('enrere', 16) + '</button>' +
+            '<button type="button" data-cf-dre="' + i + '" aria-label="Després"' + (i === c.photos.length - 1 ? ' disabled' : '') + '>' + IC('endavant', 16) + '</button>' +
+            '<button type="button" data-cf-treu="' + i + '" aria-label="Treu">' + IC('tanca', 16) + '</button></div></div>';
+        }).join('') + ((c.photos || []).length < 6 ? '<button type="button" class="collage-afegeix" data-cf-afegeix>' + IC('mes', 22) + '<span>Afegeix fotos</span></button>' : '') + '</div></div>' +
+        (disp.length > 1 ? '<div class="camp">Disposició<div class="disposicions">' + disp.map(function (d) {
+          return '<button type="button" class="disposicio' + (Pnt.diapo.disposicio(c.photos.length, c.layout).id === d.id ? ' triada' : '') + '" data-disposicio="' + d.id + '"><div class="mostra" data-mostra-collage="' + d.id + '"></div><span>' + esc(d.nom) + '</span></button>';
+        }).join('') + '</div></div>' : '') +
+        '<label class="camp">Etiqueta (opcional)<input type="text" data-cl="label" value="' + esc(c.label || '') + '" maxlength="40" placeholder="Avui"></label>' +
+        '<label class="camp">Peu de foto (opcional) <span class="ajuda">Surt en un bloc granat a baix. La segona línia, més petita.</span><textarea data-caption rows="2" maxlength="200" placeholder="Jornada esportiva&#10;Tota l\'escola · divendres 13 de novembre">' + esc(c.caption || '') + '</textarea></label>';
     }
     if (c.kind === 'media' && m) {
       cos += '<div class="subtil">' + esc(m.name) + ' · ' + mida(m.size) + (m.w ? ' · ' + m.w + '×' + m.h : '') + (m.duration ? ' · ' + duradaText(m.duration) : '') + '</div>' +
@@ -1304,6 +1328,7 @@
           var kb = $('[data-kenburns]', el); if (kb) c.kenburns = kb.checked;
           var fit = $('[data-fit]', el); if (fit) c.fit = fit.value;
           var cap = $('[data-caption]', el); if (cap) c.caption = cap.value.trim();
+          var lbl = $('[data-cl=label]', el); if (lbl) c.label = lbl.value.trim();
           var du = parseInt($('[data-durada]', el).value, 10);
           c.duration = du >= 2 ? du : null;
           c.transition = $('[data-transicio]', el).value;
@@ -1336,6 +1361,7 @@
           if ((c.kind === 'web' || c.kind === 'youtube') && !/^https?:\/\/\S+$/i.test(c.url || '')) { toast('Escriu una adreça vàlida (ha de començar per https://).', 'error'); return; }
           if (c.kind === 'youtube' && !Pnt.youtubeEmbed(c.url)) { toast('No sembla un enllaç de YouTube.', 'error'); return; }
           if (c.kind === 'countdown' && !(c.text && c.text.date)) { toast('Posa la data de l\'esdeveniment.', 'error'); return; }
+          if (c.kind === 'collage' && (c.photos || []).length < 2) { toast('Un collage necessita almenys 2 fotos.', 'error'); return; }
           if (c.kind === 'text' && !(c.text.title || c.text.body)) { toast('Escriu almenys un títol o un text.', 'error'); return; }
           if (c.kind === 'text' && c.text.template === 'esdeveniment' && !c.text.date) { toast('Posa la data de l\'esdeveniment.', 'error'); return; }
           if (c.kind === 'text' && c.text.template === 'foto' && !c.text.bgMediaId) { toast('Tria la foto de fons.', 'error'); return; }
@@ -1343,6 +1369,24 @@
           enDesar(c);
         };
         if (c.kind === 'text') { visibles(); pintaMostres(); }
+        if (c.kind === 'collage') {
+          var reobre = function () { llegeix(); editaItem(c, enDesar, esNou); };
+          $$('[data-cf-esq]', el).forEach(function (b) { b.onclick = function () { var i = +b.dataset.cfEsq; c.photos.splice(i - 1, 0, c.photos.splice(i, 1)[0]); reobre(); }; });
+          $$('[data-cf-dre]', el).forEach(function (b) { b.onclick = function () { var i = +b.dataset.cfDre; c.photos.splice(i + 1, 0, c.photos.splice(i, 1)[0]); reobre(); }; });
+          $$('[data-cf-treu]', el).forEach(function (b) { b.onclick = function () { c.photos.splice(+b.dataset.cfTreu, 1); reobre(); }; });
+          var af = $('[data-cf-afegeix]', el);
+          if (af) af.onclick = function () {
+            llegeix();
+            triaMitjans({ multi: true, kind: 'image', titol: 'Afegeix fotos al collage' }).then(function (ids) {
+              (ids || []).forEach(function (id) { if (c.photos.indexOf(id) < 0 && c.photos.length < 6) c.photos.push(id); });
+              editaItem(c, enDesar, esNou);
+            });
+          };
+          $$('[data-disposicio]', el).forEach(function (b) {
+            b.onclick = function () { c.layout = b.dataset.disposicio; $$('[data-disposicio]', el).forEach(function (x) { x.classList.toggle('triada', x === b); }); pinta(); };
+          });
+          $$('[data-mostra-collage]', el).forEach(function (box) { pintaDiapoA(box, Object.assign({}, c, { layout: box.dataset.mostraCollage, caption: '', label: '' })); });
+        }
         pintaPreviaItem(caixa, c);
       }
     });
@@ -1447,7 +1491,7 @@
     var u = {};
     S.d.playlists.forEach(function (l) {
       l.items.forEach(function (it) {
-        var ids = [it.mediaId, it.text && it.text.bgMediaId].filter(Boolean);
+        var ids = [it.mediaId, it.text && it.text.bgMediaId].concat(it.photos || []).filter(Boolean);
         ids.forEach(function (id) { (u[id] = u[id] || []); if (u[id].indexOf(l) < 0) u[id].push(l); });
       });
     });
@@ -1520,7 +1564,7 @@
       var resolt = false;
       var llista = S.d.media.slice().reverse().filter(function (m) { return !opc.kind || m.kind === opc.kind; });
       obreModal({
-        titol: opc.multi ? 'Tria fotos i vídeos' : 'Tria una imatge',
+        titol: opc.titol || (opc.multi ? 'Tria fotos i vídeos' : 'Tria una imatge'),
         classe: 'molt-ample',
         cos: llista.length ? '<div class="filtres" style="margin-top:0"><input type="search" placeholder="Cerca…" data-cerca></div><div class="mitjans" data-g></div>' :
           '<div class="buit">La biblioteca és buida. Tanca aquesta finestra i puja fitxers.</div>',

@@ -231,7 +231,8 @@
     var cred = PREVIA ? { session: llegeixLS('pnt_session') } : { token: token };
     var necessaris = Object.keys(config.media);
     // Primer els fitxers de les diapositives que toquen ara.
-    var araIds = elegibles(true).map(function (it) { return it.mediaId; });
+    var araIds = [];
+    elegibles(true).forEach(function (it) { if (it.mediaId) araIds.push(it.mediaId); (it.photos || []).forEach(function (x) { araIds.push(x); }); });
     var logos = [config.settings.logoMediaId, config.settings.logoNegMediaId];
     var prio = function (id) { return logos.indexOf(id) >= 0 ? 0 : araIds.indexOf(id) >= 0 ? 1 : 2; };
     necessaris.sort(function (a, b) { return prio(a) - prio(b); });
@@ -456,6 +457,7 @@
   function nomItem(it) {
     if (it.name) return it.name;
     if (it.kind === 'media') { var m = config.media[it.mediaId]; return m ? m.name : 'fitxer'; }
+    if (it.kind === 'collage') return it.caption ? it.caption.split('\n')[0] : 'Collage de ' + (it.photos || []).length + ' fotos';
     if (it.text && it.text.title) return it.text.title;
     if (it.url) return it.url;
     return it.kind;
@@ -475,6 +477,10 @@
       if (it.on === false) return false;
       if (!Pnt.dinsHorari(it.playlistSchedule, l) || !Pnt.dinsHorari(it.schedule, l)) return false;
       if (it.kind === 'media') return !!config.media[it.mediaId] && (ignoraPresents || !!presents[it.mediaId]);
+      if (it.kind === 'collage') {
+        var fotos = (it.photos || []).filter(function (id) { return config.media[id] && (ignoraPresents || presents[id]); });
+        return fotos.length >= 2 && fotos.length === (it.photos || []).filter(function (id) { return config.media[id]; }).length;
+      }
       if ((it.kind === 'web' || it.kind === 'youtube') && !navigator.onLine && !PREVIA) return false;
       return true;
     });
@@ -647,6 +653,22 @@
             v.load();
           }
         });
+      } else if (item.kind === 'collage') {
+        var ids = (item.photos || []).filter(function (id) { return config.media[id]; }), queden = ids.length;
+        var fesCollage = function () {
+          var n = Pnt.diapo.crea(item, ctxDiapo());
+          capa.appendChild(n);
+          // Espera que les fotos estiguin descodificades per evitar parpellejos
+          var carregades = 0;
+          ids.forEach(function (id) {
+            var im = new Image();
+            im.onload = im.onerror = function () { if (++carregades === ids.length) ok(); };
+            im.src = urls[id];
+          });
+          if (!ids.length) ok();
+        };
+        if (!queden) return ko(new Error('collage sense fotos'));
+        ids.forEach(function (id) { urlMitja(id, function () { if (!--queden) fesCollage(); }); });
       } else if (item.kind === 'web' || item.kind === 'youtube') {
         var src = item.kind === 'youtube' ? Pnt.youtubeEmbed(item.url, config.screen.sound) : item.url;
         if (!src) return ko(new Error('enllaç no vàlid'));

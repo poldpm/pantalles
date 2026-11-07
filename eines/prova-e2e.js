@@ -101,6 +101,24 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     await p.waitForFunction(() => document.querySelector('#indicador').textContent.includes('desat'), null, { timeout: 10000 });
     ok(true, 'afegida i desada una diapositiva de text');
 
+    // Collage de 3 fotos amb peu de foto
+    await p.click('[data-afegeix=collage]');
+    await p.waitForSelector('.modal .mitja');
+    const fotosBib = await p.$$('.modal .mitja');
+    for (const f of fotosBib.slice(0, 3)) await f.click();
+    await p.click('.modal [data-ok]');
+    await p.waitForSelector('.collage-fotos');
+    ok((await p.$$('.collage-foto')).length === 3, 'el collage té les 3 fotos triades');
+    await p.click('[data-disposicio="3g"]');
+    await p.fill('[data-cl=label]', 'Avui');
+    await p.fill('[data-caption]', 'Jornada esportiva\nTota l’escola · divendres 13 de novembre');
+    await espera(600);
+    await captura(p, '05b-editor-collage');
+    await p.click('[data-ok]');
+    await p.waitForFunction(() => document.querySelectorAll('[data-items] .item').length === 8);
+    await p.waitForFunction(() => document.querySelector('#indicador').textContent.includes('desat'), null, { timeout: 10000 });
+    ok(true, 'afegit i desat un collage');
+
     // Programar un element per a dates passades → no s'ha de mostrar
     await p.click('[data-items] .item:nth-child(3) [data-edita]');
     await p.click('label:has(input[name=h-mode][value=prog]) span');
@@ -124,6 +142,10 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     }
     ok(!vistos.has('foto3.jpg'), 'no mostra l\'element caducat');
     ok(vistos.has('Benvinguts!'), 'mostra la diapositiva de text');
+    while (!(await tv.evaluate(() => window.__pantalla.estat().item)).startsWith('Jornada esportiva')) { await tv.evaluate(() => window.__pantalla.seguent()); await espera(1300); }
+    await espera(1300);
+    ok(await tv.$$eval('.capa.visible .dp-collage-foto', (e) => e.length) === 3, 'la pantalla mostra el collage amb les 3 fotos');
+    await captura(tv, '06b-pantalla-collage');
     ok([...vistos].some((v) => /pàg\. 2/.test(v)), 'mostra les pàgines del PDF');
     await tv.evaluate(() => window.__pantalla.seguent());
     while (!(await tv.evaluate(() => window.__pantalla.estat().item)).startsWith('Benvinguts')) { await tv.evaluate(() => window.__pantalla.seguent()); await espera(1300); }

@@ -183,19 +183,77 @@
   };
 
   /** Peu de foto corporatiu (bloc granat amb el tall a 45°). */
-  D.peuFoto = function (text) {
+  D.peuFoto = function (text, etiqueta) {
     var linies = String(text || '').split('\n');
     var p = el('div', 'dp-peu-foto');
-    p.innerHTML = '<div class="dp-peu-foto-1">' + Pnt.escapa(linies[0]) + '</div>' +
-      (linies.length > 1 ? '<div class="dp-peu-foto-2">' + Pnt.escapa(linies.slice(1).join(' ')) + '</div>' : '');
+    p.innerHTML = (etiqueta ? '<div class="dp-etiqueta dp-peu-etiqueta">' + Pnt.escapa(etiqueta) + '</div>' : '') +
+      (text ? '<div class="dp-peu-foto-1">' + Pnt.escapa(linies[0]) + '</div>' : '') +
+      (text && linies.length > 1 ? '<div class="dp-peu-foto-2">' + Pnt.escapa(linies.slice(1).join(' ')) + '</div>' : '');
     return p;
   };
+
+  /* ---------- Collage ----------
+   * Cada disposició és una graella (files de lletres, una lletra per foto).
+   * A les pantalles verticals la graella es gira (files ↔ columnes). */
+  D.COLLAGES = {
+    2: [{ id: '2', nom: 'Meitat i meitat', g: ['a b'] },
+        { id: '2g', nom: 'Una de gran', g: ['a a b'] }],
+    3: [{ id: '3g', nom: 'Una de gran', g: ['a a b', 'a a c'] },
+        { id: '3', nom: 'Tres iguals', g: ['a b c'] },
+        { id: '3d', nom: 'Gran a la dreta', g: ['a c c', 'b c c'] }],
+    4: [{ id: '4', nom: 'Quatre iguals', g: ['a b', 'c d'] },
+        { id: '4g', nom: 'Una de gran', g: ['a a b', 'a a c', 'a a d'] },
+        { id: '4f', nom: 'En franja', g: ['a b c d'] }],
+    5: [{ id: '5g', nom: 'Una de gran', g: ['a a b c', 'a a d e'] },
+        { id: '5c', nom: 'Gran al centre', g: ['b a a d', 'c a a e'] }],
+    6: [{ id: '6', nom: 'Sis iguals', g: ['a b c', 'd e f'] },
+        { id: '6g', nom: 'Una de gran', g: ['a a b c', 'a a d e', 'a a f f'] }]
+  };
+  D.disposicio = function (n, id) {
+    var llista = D.COLLAGES[Math.max(2, Math.min(6, n))] || D.COLLAGES[2];
+    for (var i = 0; i < llista.length; i++) if (llista[i].id === id) return llista[i];
+    return llista[0];
+  };
+  function transposa(files) {
+    var m = files.map(function (f) { return f.split(' '); });
+    var res = [];
+    for (var c = 0; c < m[0].length; c++) res.push(m.map(function (f) { return f[c]; }).join(' '));
+    return res;
+  }
+  D.collage = function (item, ctx) {
+    var fotos = (item.photos || []).filter(function (id) { return ctx && ctx.urlMitja && ctx.urlMitja(id); });
+    var n = el('div', 'dp dp-collage');
+    var disp = D.disposicio(fotos.length, item.layout);
+    n.dataset.files = JSON.stringify(disp.g);
+    var graella = el('div', 'dp-collage-graella');
+    var lletres = 'abcdef';
+    fotos.slice(0, 6).forEach(function (id, i) {
+      var c = el('div', 'dp-collage-foto');
+      c.style.gridArea = lletres[i];
+      c.style.backgroundImage = 'url("' + ctx.urlMitja(id) + '")';
+      graella.appendChild(c);
+    });
+    n.appendChild(graella);
+    aplicaGraella(n, false);
+    if (item.caption || item.label) n.appendChild(D.peuFoto(item.caption, item.label));
+    return n;
+  };
+  function aplicaGraella(node, vertical) {
+    var g = node.querySelector('.dp-collage-graella');
+    if (!g || !node.dataset.files) return;
+    var files = JSON.parse(node.dataset.files);
+    if (vertical) files = transposa(files);
+    g.style.gridTemplateAreas = files.map(function (f) { return '"' + f + '"'; }).join(' ');
+    g.style.gridTemplateColumns = 'repeat(' + files[0].split(' ').length + ', 1fr)';
+    g.style.gridTemplateRows = 'repeat(' + files.length + ', 1fr)';
+  }
 
   /** Crea la diapositiva corresponent a l'element (o null si no és generada). */
   D.crea = function (item, ctx) {
     if (item.kind === 'text') return D.text(item, ctx);
     if (item.kind === 'clock') return D.clock(item, ctx);
     if (item.kind === 'countdown') return D.countdown(item, ctx);
+    if (item.kind === 'collage') return D.collage(item, ctx);
     return null;
   };
 
@@ -203,6 +261,7 @@
   D.ajusta = function (node) {
     if (!node || !node.clientHeight) return;
     node.classList.toggle('dp-vertical', node.clientHeight > node.clientWidth);
+    if (node.classList.contains('dp-collage')) aplicaGraella(node, node.clientHeight > node.clientWidth);
     var cos = node.querySelector('.dp-cos');
     if (!cos) return;
     var pare = cos.parentElement, cs = getComputedStyle(pare);

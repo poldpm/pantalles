@@ -166,6 +166,7 @@ function configPantalla_(bd, p) {
         usats[it.mediaId] = true;
       }
       if (it.text && it.text.bgMediaId) usats[it.text.bgMediaId] = true;
+      if (it.kind === 'collage') (it.photos || []).forEach(function (id) { if (troba_(bd.media, id)) usats[id] = true; });
       const c = JSON.parse(JSON.stringify(it));
       c.playlistId = l.id;
       c.playlistSchedule = l.schedule || null;

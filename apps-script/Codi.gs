@@ -126,7 +126,7 @@ function accioVistaPrevia_(req, u) {
 /* ======================================================================
  *  VALIDACIÓ (mai ens fiem del que arriba)
  * ==================================================================== */
-const TIPUS_ITEM = ['media', 'text', 'web', 'youtube', 'clock', 'countdown'];
+const TIPUS_ITEM = ['media', 'text', 'web', 'youtube', 'clock', 'countdown', 'collage'];
 const TRANSICIONS = ['', 'fade', 'slide', 'zoom', 'none'];
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -171,9 +171,18 @@ function netejaItem_(it, bd) {
     transition: TRANSICIONS.indexOf(it.transition) >= 0 ? it.transition : '',
     fit: ['cover', 'contain'].indexOf(it.fit) >= 0 ? it.fit : '',
     kenburns: !!it.kenburns,
-    caption: kind === 'media' ? text_(it.caption, 200) : '',
+    caption: kind === 'media' || kind === 'collage' ? text_(it.caption, 200) : '',
     schedule: netejaHorari_(it.schedule)
   };
+  if (kind === 'collage') {
+    r.photos = [].concat(it.photos || []).filter(function (id, i, a) {
+      const m = troba_(bd.media, id);
+      return m && m.kind === 'image' && a.indexOf(id) === i;
+    }).slice(0, 6);
+    if (r.photos.length < 2) throw errUsuari_('Un collage necessita almenys 2 fotos.', 'ITEM');
+    r.layout = text_(it.layout, 10);
+    r.label = text_(it.label, 40);
+  }
   if (kind === 'media') {
     if (!troba_(bd.media, it.mediaId)) throw errUsuari_('Un dels fitxers de la llista ja no existeix a la biblioteca.', 'ITEM');
     r.mediaId = it.mediaId;
