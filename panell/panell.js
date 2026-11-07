@@ -583,7 +583,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.4.0';
+  var VERSIO_SERVEI = '1.5.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -1242,6 +1242,7 @@
         '<label class="camp">Peu (opcional)<input type="text" data-t="footer" value="' + esc(t.footer) + '" maxlength="200"></label>' +
         '<div class="camp" data-nomes="foto">Foto de fons<div class="btns"><span data-fons-nom class="subtil">' + (t.bgMediaId ? esc((troba(S.d.media, t.bgMediaId) || {}).name || '') : 'Cap (cal triar-ne una)') + '</span>' +
         '<button type="button" class="btn petit" data-tria-fons>Tria…</button></div></div>' +
+        '<label class="camp" data-nomes="foto">Enquadrament de la foto <span class="ajuda">Quina part es veu quan s\'ha de retallar.</span><select data-t="focus">' + '<option value="">Centre</option><option value="top"' + (t.focus === 'top' ? ' selected' : '') + '>A dalt (caps i cares)</option><option value="bottom"' + (t.focus === 'bottom' ? ' selected' : '') + '>A baix</option>' + '</select></label>' +
         '<div class="fila"><label class="camp" data-nomes="granat paper">Alineació<select data-t="align"><option value="left"' + (t.align !== 'center' ? ' selected' : '') + '>A l\'esquerra</option><option value="center"' + (t.align === 'center' ? ' selected' : '') + '>Centrat</option></select></label>' +
         '<label class="camp">Mida de la lletra<input type="range" min="60" max="160" step="10" data-t="size" value="' + (t.size || 100) + '"></label></div>';
     }
@@ -1286,6 +1287,7 @@
       cos += '<div class="subtil">' + esc(m.name) + ' · ' + mida(m.size) + (m.w ? ' · ' + m.w + '×' + m.h : '') + (m.duration ? ' · ' + duradaText(m.duration) : '') + '</div>' +
         '<label class="camp">Peu de foto (opcional) <span class="ajuda">Surt en un bloc granat a baix. La segona línia, més petita.</span><textarea data-caption rows="2" maxlength="200" placeholder="Sortida al Montseny&#10;3r de primària · dijous 5 de novembre">' + esc(c.caption || '') + '</textarea></label>';
       if (!esVideo) cos += '<label class="interruptor"><input type="checkbox" data-kenburns' + (c.kenburns ? ' checked' : '') + '> Moviment lent sobre la foto</label>';
+      cos += '<label class="camp">Enquadrament <span class="ajuda">Quina part de la foto es veu quan s\'ha de retallar.</span><select data-focus>' + '<option value="">Centre</option><option value="top"' + (c.focus === 'top' ? ' selected' : '') + '>A dalt (caps i cares)</option><option value="bottom"' + (c.focus === 'bottom' ? ' selected' : '') + '>A baix</option>' + '</select></label>';
       cos += '<label class="camp">Com s\'ajusta a la pantalla<select data-fit><option value="">Com digui la pantalla</option><option value="cover"' + (c.fit === 'cover' ? ' selected' : '') + '>Omplir (retalla les vores)</option><option value="contain"' + (c.fit === 'contain' ? ' selected' : '') + '>Sencera (amb fons difuminat)</option></select></label>';
     }
     // Comú
@@ -1295,6 +1297,7 @@
       ['fade', 'slide', 'zoom', 'none'].map(function (x) { return '<option value="' + x + '"' + (c.transition === x ? ' selected' : '') + '>' + nomTransicio(x).replace(/^./, function (a) { return a.toUpperCase(); }) + '</option>'; }).join('') + '</select></label></div>' +
       '<label class="camp">Nom intern (opcional)<input type="text" data-nomitem value="' + esc(c.name || '') + '" maxlength="120" placeholder="' + esc(c.kind === 'media' ? (m ? m.name : '') : 'Per reconèixer-lo a la llista') + '"></label>';
     cos += '</div><div class="pila"><div class="camp">Vista prèvia<div class="previa-caixa" data-previa-item></div></div>' +
+      '<div class="avis-caixa" data-avis-res hidden></div>' +
       '<div class="camp">Quan es mostra' + htmlHorari(c.schedule) + '</div></div></div>';
 
     obreModal({
@@ -1305,7 +1308,7 @@
       noTancarFora: true,
       enObrir: function (el) {
         var caixa = $('[data-previa-item]', el);
-        var pinta = debounce(function () { pintaPreviaItem(caixa, c); }, 120);
+        var pinta = debounce(function () { pintaPreviaItem(caixa, c); avisResolucio(el, c); }, 120);
         var visibles = function () {
           var tpl = c.text && c.text.template;
           $$('[data-nomes]', el).forEach(function (n) { n.hidden = n.dataset.nomes.split(' ').indexOf(tpl) < 0; });
@@ -1327,6 +1330,7 @@
           $$('[data-u]', el).forEach(function (i) { c[i.dataset.u] = i.type === 'number' ? (parseInt(i.value, 10) || 0) : i.value.trim(); });
           var kb = $('[data-kenburns]', el); if (kb) c.kenburns = kb.checked;
           var fit = $('[data-fit]', el); if (fit) c.fit = fit.value;
+          var foc = $('[data-focus]', el); if (foc) c.focus = foc.value;
           var cap = $('[data-caption]', el); if (cap) c.caption = cap.value.trim();
           var lbl = $('[data-cl=label]', el); if (lbl) c.label = lbl.value.trim();
           var du = parseInt($('[data-durada]', el).value, 10);
@@ -1388,8 +1392,24 @@
           $$('[data-mostra-collage]', el).forEach(function (box) { pintaDiapoA(box, Object.assign({}, c, { layout: box.dataset.mostraCollage, caption: '', label: '' })); });
         }
         pintaPreviaItem(caixa, c);
+        avisResolucio(el, c);
       }
     });
+  }
+
+  /** Avisa si una foto s'haurà d'ampliar massa a la tele (Full HD) i es veurà borrosa. */
+  function avisResolucio(el, c) {
+    var caixa = $('[data-avis-res]', el);
+    if (!caixa) return;
+    var id = null, w = 1920, h = 1080;
+    if (c.kind === 'media') id = c.mediaId;
+    if (c.kind === 'text' && c.text && c.text.template === 'foto') { id = c.text.bgMediaId; w = 960; }
+    var m = id ? troba(S.d.media, id) : null;
+    if (!m || m.kind !== 'image' || !m.w || !m.h || (c.kind === 'media' && c.fit === 'contain')) { caixa.hidden = true; return; }
+    var amplia = Math.max(w / m.w, h / m.h);
+    caixa.hidden = amplia < 1.6;
+    caixa.innerHTML = '<b>Aquesta foto es veurà borrosa.</b> Fa ' + m.w + '×' + m.h + ' píxels i a la tele s\'haurà d\'ampliar ' + amplia.toFixed(1).replace('.', ',') +
+      ' vegades. Si pots, puja l\'original (les fotos reenviades per WhatsApp perden molta qualitat)' + (c.kind === 'media' ? ' o tria «Sencera» a «Com s\'ajusta a la pantalla».' : '.');
   }
 
   /** Context per dibuixar diapositives al panell (miniatures en lloc dels fitxers). */
@@ -1430,7 +1450,7 @@
     if (it.kind === 'media') {
       var m = troba(S.d.media, it.mediaId);
       var th = S.thumbs[it.mediaId];
-      caixa.innerHTML = th ? '<img src="' + th + '" alt="" style="object-fit:' + (it.fit === 'contain' ? 'contain' : 'cover') + '">' : '<div class="buit">' + esc(m ? m.name : '') + '</div>';
+      caixa.innerHTML = th ? '<img src="' + th + '" alt="" style="object-fit:' + (it.fit === 'contain' ? 'contain' : 'cover') + ';object-position:' + Pnt.diapo.posicio(it.focus) + '">' : '<div class="buit">' + esc(m ? m.name : '') + '</div>';
       if (it.caption) { Pnt.diapo.escala(caixa); caixa.appendChild(Pnt.diapo.peuFoto(it.caption)); }
       return;
     }

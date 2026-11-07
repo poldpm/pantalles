@@ -90,6 +90,7 @@
     } else if (tpl === 'foto') {
       var f = el('div', 'dp-foto');
       f.style.backgroundImage = 'url("' + ctx.urlMitja(t.bgMediaId) + '")';
+      f.style.backgroundPosition = D.posicio(t.focus);
       n.appendChild(f);
       var panell = el('div', 'dp-panell');
       panell.appendChild(blocText(t, k, { titol: 9.5, text: 4.6 }));
@@ -247,6 +248,9 @@
     g.style.gridTemplateColumns = 'repeat(' + files[0].split(' ').length + ', 1fr)';
     g.style.gridTemplateRows = 'repeat(' + files.length + ', 1fr)';
   }
+
+  /** Enquadrament: quina part de la foto es veu quan s'ha de retallar. */
+  D.posicio = function (focus) { return focus === 'top' ? 'center 18%' : focus === 'bottom' ? 'center 82%' : 'center center'; };
 
   /** Crea la diapositiva corresponent a l'element (o null si no és generada). */
   D.crea = function (item, ctx) {

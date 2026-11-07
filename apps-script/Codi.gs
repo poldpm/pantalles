@@ -171,6 +171,7 @@ function netejaItem_(it, bd) {
     transition: TRANSICIONS.indexOf(it.transition) >= 0 ? it.transition : '',
     fit: ['cover', 'contain'].indexOf(it.fit) >= 0 ? it.fit : '',
     kenburns: !!it.kenburns,
+    focus: ['top', 'bottom'].indexOf(it.focus) >= 0 ? it.focus : '',
     caption: kind === 'media' || kind === 'collage' ? text_(it.caption, 200) : '',
     schedule: netejaHorari_(it.schedule)
   };
@@ -197,6 +198,7 @@ function netejaItem_(it, bd) {
     const t = it.text || {};
     r.text = {
       template: ['granat', 'paper', 'foto', 'esdeveniment'].indexOf(t.template) >= 0 ? t.template : 'granat',
+      focus: ['top', 'bottom'].indexOf(t.focus) >= 0 ? t.focus : '',
       label: text_(t.label, 40), place: text_(t.place, 120),
       title: text_(t.title, 200), body: text_(t.body, 1500), footer: text_(t.footer, 200),
       bg: color_(t.bg, '#c8102e'), bg2: color_(t.bg2, ''), fg: color_(t.fg, '#ffffff'),

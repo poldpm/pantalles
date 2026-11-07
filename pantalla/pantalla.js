@@ -632,6 +632,7 @@
             if (ajust === 'contain') { var fb = document.createElement('div'); fb.className = 'fons-borros'; fb.style.backgroundImage = 'url("' + u + '")'; capa.appendChild(fb); }
             var img = new Image();
             img.className = 'mitja'; img.alt = '';
+            if (item.focus) img.style.objectPosition = Pnt.diapo.posicio(item.focus);
             img.onload = function () { (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(ok); };
             img.onerror = function () { ko(new Error('imatge malmesa')); };
             img.src = u;
@@ -641,6 +642,7 @@
           } else {
             var v = document.createElement('video');
             v.className = 'mitja';
+            if (item.focus) v.style.objectPosition = Pnt.diapo.posicio(item.focus);
             v.muted = !config.screen.sound;
             v.setAttribute('muted', v.muted ? '' : null);
             v.playsInline = true; v.setAttribute('playsinline', '');
