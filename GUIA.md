@@ -239,6 +239,7 @@ Dins la carpeta del Drive hi ha la **Bústia**. Si s'hi deixen fotos o vídeos (
 | Una pàgina web surt en blanc | Aquella web no deixa que la mostrin dins d'una altra pàgina (passa amb Google, Instagram, diaris…). Fes-ne una captura o un PDF. |
 | Un vídeo no es veu | Exporta'l en **MP4 (H.264)**, el format més compatible. Del Canva ja surt així. |
 | Una pantalla fa coses estranyes | *Pantalles → la pantalla → ⋯ → Reinicia el reproductor*. |
+| Vull que una altra pantalla mostri el mateix | *Pantalles → la pantalla → ⋯ → Duplica la pantalla* (en crea una de nova igual i hi vincules la tele) o *Copia aquesta configuració a…* (la passa a pantalles que ja tens). |
 | Canviem una tele o l'aparell | *Pantalles → la pantalla → ⋯ → Canviar l'aparell* i escriu el codi de l'aparell nou. Es manté tota la configuració. |
 | Ningú pot entrar al panell | A l'editor d'Apps Script, a `Instal.gs`, posa el correu a la funció `afegirAdministrador` i executa-la. |
 | S'ha esborrat alguna cosa per error | A la carpeta del Drive, *Còpies de seguretat*, hi ha una còpia diària de tota la configuració (30 dies). Els fitxers esborrats van a la paperera del Drive. |

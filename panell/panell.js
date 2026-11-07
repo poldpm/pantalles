@@ -591,7 +591,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.6.0';
+  var VERSIO_SERVEI = '1.7.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -752,13 +752,14 @@
 
   function afegirPantalla(idExistent) {
     var substitueix = typeof idExistent === 'string' ? troba(S.d.screens, idExistent) : null;
+    var senseAparell = substitueix && !(S.d.status[substitueix.id] && S.d.status[substitueix.id].seen);
     var llistes = S.d.playlists;
     obreModal({
-      titol: substitueix ? 'Canviar l\'aparell de «' + substitueix.name + '»' : 'Afegir una pantalla',
+      titol: substitueix ? (senseAparell ? 'Vincula una tele a «' + substitueix.name + '»' : 'Canviar l\'aparell de «' + substitueix.name + '»') : 'Afegir una pantalla',
       cos: '<div class="pila">' +
         '<div class="avis-caixa info">A la tele (o al miniPC, Chromecast, ordinador… connectat a la tele) obre el navegador i ves a:<br><b style="word-break:break-all">' + esc(urlReproductor()) + '</b><br>Sortirà un codi de 6 xifres a la pantalla.</div>' +
         '<label class="camp">Codi que surt a la pantalla<input type="text" class="codi-gran" inputmode="numeric" maxlength="7" placeholder="000 000" data-codi autofocus></label>' +
-        (substitueix ? '<p class="subtil">L\'aparell antic deixarà de funcionar i el nou mostrarà el mateix contingut i configuració.</p>' :
+        (substitueix ? (senseAparell ? '' : '<p class="subtil">L\'aparell antic deixarà de funcionar i el nou mostrarà el mateix contingut i configuració.</p>') :
           '<div class="fila"><label class="camp">Nom de la pantalla<input type="text" data-nom placeholder="Recepció principal" maxlength="80"></label>' +
           '<label class="camp">On és (opcional)<input type="text" data-lloc placeholder="Entrada c/ Escorial" maxlength="120"></label></div>' +
           (llistes.length ? '<div class="camp">Què ha de mostrar<div class="pila" style="gap:8px;font-weight:500">' + llistes.map(function (l) {
@@ -800,6 +801,53 @@
               mostraEnllac(p, r.token);
             });
           });
+        };
+      }
+    });
+  }
+
+  /** Crea una pantalla nova amb la mateixa configuració (després s'hi vincula una tele). */
+  function duplicaPantalla(p) {
+    obreModal({
+      titol: 'Duplica «' + p.name + '»',
+      cos: '<div class="pila"><p style="margin:0">Es crearà una pantalla nova amb la mateixa configuració: llistes, horari, orientació, rellotge, cinta i avisos. Després hi vincules la tele amb el codi.</p>' +
+        '<div class="fila"><label class="camp">Nom de la pantalla nova<input type="text" data-nom value="' + esc(p.name + ' (còpia)') + '" maxlength="80" autofocus></label>' +
+        '<label class="camp">On és (opcional)<input type="text" data-lloc value="' + esc(p.location || '') + '" maxlength="120"></label></div></div>',
+      peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn primari" data-ok>' + IC('duplica') + 'Duplica</button>',
+      enObrir: function (el) {
+        $('[data-ok]', el).onclick = function () {
+          var b = this; b.disabled = true;
+          crida('duplicateScreen', { id: p.id, name: $('[data-nom]', el).value.trim(), location: $('[data-lloc]', el).value.trim() }, { desa: true }).then(function (r) {
+            return carrega().then(function () {
+              tancaModal();
+              location.hash = '#pantalla/' + r.screen.id;
+              toast('Pantalla duplicada. Ara vincula-hi la tele.', 'ok', 5000);
+              setTimeout(function () { afegirPantalla(r.screen.id); }, 300);
+            });
+          }, function () { b.disabled = false; });
+        };
+      }
+    });
+  }
+
+  /** Passa la configuració d'una pantalla a altres que ja existeixen. */
+  function copiaConfigA(p) {
+    var altres = S.d.screens.filter(function (x) { return x.id !== p.id; });
+    if (!altres.length) { toast('No hi ha cap altra pantalla. Fes servir «Duplica la pantalla».', 'error'); return; }
+    obreModal({
+      titol: 'Copia la configuració de «' + p.name + '»',
+      cos: '<div class="pila"><p style="margin:0">Les pantalles triades passaran a mostrar el mateix que «' + esc(p.name) + '»: les mateixes llistes, horari, orientació, rellotge, cinta i avisos. Es mantenen el seu nom i el seu aparell.</p>' +
+        '<div class="pila" style="gap:8px">' + altres.map(function (x) { return '<label class="interruptor"><input type="checkbox" data-a="' + x.id + '"> ' + esc(x.name) + (x.location ? ' <span class="molt-subtil">· ' + esc(x.location) + '</span>' : '') + '</label>'; }).join('') + '</div></div>',
+      peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn primari" data-ok disabled>' + IC('copia') + 'Copia la configuració</button>',
+      enObrir: function (el) {
+        var ok = $('[data-ok]', el);
+        $$('[data-a]', el).forEach(function (c) { c.onchange = function () { ok.disabled = !$$('[data-a]:checked', el).length; }; });
+        ok.onclick = function () {
+          var ids = $$('[data-a]:checked', el).map(function (c) { return c.dataset.a; });
+          ok.disabled = true;
+          crida('duplicateScreen', { id: p.id, toIds: ids }, { desa: true }).then(function (r) {
+            return carrega().then(function () { tancaModal(); toast('Configuració copiada a ' + r.copiades + ' pantalla' + (r.copiades === 1 ? '' : 'es') + '. S\'actualitzaran en menys d\'un minut.', 'ok', 5000); render(true); });
+          }, function () { ok.disabled = false; });
         };
       }
     });
@@ -906,7 +954,9 @@
         { text: IC('recarrega') + 'Reinicia el reproductor', fes: function () { crida('screenCommand', { id: id, type: 'reload' }, { desa: true }).then(function () { toast('Es reiniciarà en menys d\'un minut.', 'ok'); }); } },
         { text: IC('neteja') + 'Esborra i torna a descarregar els fitxers', fes: function () { crida('screenCommand', { id: id, type: 'clearcache' }, { desa: true }).then(function () { toast('Ordre enviada.', 'ok'); }); } },
         { text: IC('enllac') + 'Enllaç i codi QR d\'aquesta pantalla', fes: function () { enllacPantalla(id); } },
-        { text: IC('canvia') + 'Canviar l\'aparell (tele nova…)', fes: function () { afegirPantalla(id); } }
+        { text: IC('canvia') + 'Canviar l\'aparell (tele nova…)', fes: function () { afegirPantalla(id); } },
+        { text: IC('duplica') + 'Duplica la pantalla', fes: function () { duplicaPantalla(p); } },
+        { text: IC('copia') + 'Copia aquesta configuració a…', fes: function () { copiaConfigA(p); } }
       ];
       if (esAdmin) {
         ops.push({ text: IC('recarrega') + 'Renova l\'enllaç (desvincula l\'aparell actual)', fes: function () {

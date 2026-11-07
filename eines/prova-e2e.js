@@ -172,6 +172,16 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     await captura(tv, '08-pantalla-rellotge-cinta');
     await captura(p, '09-config-pantalla');
 
+    // Duplicar la pantalla
+    await p.click('[data-accio=mes]');
+    await p.click('.desplegable button:has-text("Duplica la pantalla")');
+    await p.fill('.modal [data-nom]', 'Recepció (còpia)');
+    await p.click('.modal [data-ok]');
+    await p.waitForSelector('.modal [data-codi]', { timeout: 15000 });
+    ok(await p.evaluate(() => { const s = window.__panell.S.d.screens; return s.length === 2 && s[1].name === 'Recepció (còpia)' && s[1].overlays.clock === true && s[1].playlists.length === s[0].playlists.length; }),
+      'duplica la pantalla amb la mateixa configuració i demana vincular-hi una tele');
+    await p.keyboard.press('Escape');
+
     /* ---------- 7. Avís urgent ---------- */
     console.log('Avís urgent');
     await p.click('a[data-sec=inici]');

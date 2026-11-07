@@ -78,6 +78,51 @@ function accioVinculaPantalla_(req, u) {
   return { screen: senseSecrets_(p) };
 }
 
+/** Camps de configuració que es copien d'una pantalla a una altra (no el nom, la ubicació ni l'aparell). */
+function copiaConfigPantalla_(de, a) {
+  a.playlists = (de.playlists || []).slice();
+  a.orientation = de.orientation || 0;
+  a.fit = de.fit || 'cover';
+  a.transition = de.transition || '';
+  a.duration = de.duration || 0;
+  a.overlays = JSON.parse(JSON.stringify(de.overlays || {}));
+  a.sound = !!de.sound;
+  a.hours = JSON.parse(JSON.stringify(de.hours || { on: false }));
+}
+
+/** Duplica una pantalla (nova, pendent de vincular) o copia la seva configuració a altres pantalles. */
+function accioDuplicaPantalla_(req, u) {
+  let nova = null, copiades = 0;
+  modifica_(function (bd) {
+    const de = troba_(bd.screens, req.id);
+    if (!de) throw errUsuari_('Pantalla desconeguda.', 'NO_EXISTEIX');
+    if (req.toIds) {
+      [].concat(req.toIds).forEach(function (id) {
+        const a = troba_(bd.screens, id);
+        if (!a || a.id === de.id) return;
+        copiaConfigPantalla_(de, a);
+        copiades++;
+      });
+      // Els avisos i la cinta que anaven a la pantalla original, també a les altres
+      registra_(bd, u.email, 'Ha copiat la configuració de «' + de.name + '» a ' + copiades + ' pantalla' + (copiades === 1 ? '' : 'es'));
+    } else {
+      nova = novaPantalla_(req.name || (de.name + ' (còpia)'), req.location || de.location);
+      copiaConfigPantalla_(de, nova);
+      bd.screens.push(nova);
+      registra_(bd, u.email, 'Ha duplicat la pantalla «' + de.name + '» → «' + nova.name + '»');
+    }
+    // Avisos dirigits a la pantalla original: també a les noves o copiades
+    const destins = nova ? [nova.id] : [].concat(req.toIds || []);
+    bd.alerts.forEach(function (al) {
+      if (Array.isArray(al.screens) && al.screens.indexOf(de.id) >= 0) destins.forEach(function (d) { if (al.screens.indexOf(d) < 0) al.screens.push(d); });
+    });
+    bd.ticker.forEach(function (t) {
+      if (Array.isArray(t.screens) && t.screens.indexOf(de.id) >= 0) destins.forEach(function (d) { if (t.screens.indexOf(d) < 0) t.screens.push(d); });
+    });
+  });
+  return nova ? { screen: senseSecrets_(nova) } : { copiades: copiades };
+}
+
 function accioCreaPantalla_(req, u) {
   let p;
   modifica_(function (bd) {

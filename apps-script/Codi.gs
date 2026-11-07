@@ -35,6 +35,7 @@ function accionsPanell_() { return {
   createScreen: [accioCreaPantalla_, false],
   screenLink: [accioEnllacPantalla_, false],
   renewScreenLink: [accioRenovaEnllac_, true],
+  duplicateScreen: [accioDuplicaPantalla_, false],
   screenCommand: [accioOrdrePantalla_, false],
   saveMedia: [accioDesaMitja_, false],
   deleteMedia: [accioEsborraMitja_, false],
