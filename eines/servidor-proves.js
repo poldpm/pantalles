@@ -41,7 +41,7 @@ function objCarpeta(c) {
     createFile: (nom, contingut, mime) => {
       const esBlob = nom && nom._buf;
       const f = esBlob ? { id: nouIdDrive(), name: nom._nom, mime: nom._tipus, data: nom._buf, parent: c.id, trashed: false } :
-        { id: nouIdDrive(), name: nom, mime: mime || 'text/plain', data: Buffer.from(String(contingut)), parent: c.id, trashed: false };
+        { id: nouIdDrive(), name: nom, mime: mime || 'text/plain', data: Buffer.from(String(contingut)), parent: c.id, trashed: false, mod: Date.now() };
       fitxers[f.id] = f; return objFitxer(f);
     },
     getFiles: () => {
@@ -55,10 +55,11 @@ function objFitxer(f) {
   return {
     getId: () => f.id, getName: () => f.name, getMimeType: () => f.mime, getSize: () => f.data.length,
     getBlob: () => ({ getDataAsString: () => f.data.toString('utf8'), getBytes: () => aSignat(f.data) }),
-    setContent: (t) => { f.data = Buffer.from(String(t)); return objFitxer(f); },
+    setContent: (t) => { f.data = Buffer.from(String(t)); f.mod = Date.now(); return objFitxer(f); },
     setTrashed: (v) => { f.trashed = !!v; },
     moveTo: (carp) => { f.parent = carp.getId(); },
-    getUrl: () => 'https://drive.google.com/file/d/' + f.id
+    getUrl: () => 'https://drive.google.com/file/d/' + f.id,
+    getLastUpdated: () => new Date(f.mod || 0)
   };
 }
 function blobDe(buf, tipus) {
@@ -234,6 +235,11 @@ const servidor = http.createServer((req, res) => {
       res.end(JSON.stringify({ id: f.id }));
     });
     return;
+  }
+  if (url.pathname === '/__buida') { // simula que el fitxer de dades queda buit
+    fitxers[propietats.fitxer_bd].data = Buffer.from('');
+    Object.keys(cau).forEach((k) => delete cau[k]);
+    return res.end('ok');
   }
   if (url.pathname === '/__revisaArxiu') { context.__revisaArxiu(); return res.end('ok'); }
   if (url.pathname === '/config.js') {

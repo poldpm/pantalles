@@ -113,7 +113,7 @@ function accioEstat_(req, u) {
   const ax = cfgArxiu_(bd);
   res.arxiu = {
     on: ax.on, folderId: ax.folderId, screens: ax.screens, since: ax.since || '', pendents: ax.pendents,
-    darrera: ax.darrera || '', carpetes: ax.carpetes || 0, error: ax.error || '', mes: mesActual_(),
+    darrera: prop_('arxiu_darrera') || ax.darrera || '', carpetes: parseInt(prop_('arxiu_carpetes') || ax.carpetes || 0, 10), error: ax.error || '', mes: mesActual_(),
     publicadesMes: ax.aprovades.filter(function (a) { return a.mes === mesActual_(); }).length
   };
   return res;

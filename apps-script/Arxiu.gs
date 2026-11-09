@@ -107,16 +107,19 @@ function escanejaArxiu_(forcar) {
   // Miniatures per revisar-les al panell
   const minis = {};
   nous.forEach(function (n) { const m = miniaturaDrive_(n.thumb, 320); if (m && m.length < 60000) minis['ax_' + n.id] = m; delete n.thumb; });
-  modifica_(function (b) {
-    const c = cfgArxiu_(b);
-    const ja = {};
-    c.pendents.forEach(function (p) { ja[p.id] = true; });
-    nous.forEach(function (n) { if (!ja[n.id] && !c.vistos[n.id]) c.pendents.push(n); });
-    c.darrera = new Date().toISOString();
-    c.carpetes = carpetes.length;
-    c.error = '';
-    if (nous.length) registra_(b, 'arxiu fotogràfic', nous.length + ' foto' + (nous.length > 1 ? 's' : '') + ' nova' + (nous.length > 1 ? 'es' : '') + ' per revisar');
-  });
+  // L'hora de l'última comprovació va a les propietats: així no es reescriuen les dades cada 10 minuts
+  prop_('arxiu_darrera', new Date().toISOString());
+  prop_('arxiu_carpetes', carpetes.length);
+  if (nous.length || cfg.error) {
+    modifica_(function (b) {
+      const c = cfgArxiu_(b);
+      const ja = {};
+      c.pendents.forEach(function (p) { ja[p.id] = true; });
+      nous.forEach(function (n) { if (!ja[n.id] && !c.vistos[n.id]) c.pendents.push(n); });
+      c.error = '';
+      if (nous.length) registra_(b, 'arxiu fotogràfic', nous.length + ' foto' + (nous.length > 1 ? 's' : '') + ' nova' + (nous.length > 1 ? 'es' : '') + ' per revisar');
+    });
+  }
   if (Object.keys(minis).length) modificaMiniatures_(function (m) { Object.keys(minis).forEach(function (k) { m[k] = minis[k]; }); });
   return { nous: nous.length, carpetes: carpetes.length };
 }
@@ -125,7 +128,10 @@ function escanejaArxiu_(forcar) {
 function revisaArxiu() {
   try { escanejaArxiu_(false); }
   catch (e) {
-    try { modifica_(function (b) { cfgArxiu_(b).error = String(e.userMsg || e.message || e).substr(0, 200); }); } catch (e2) { /* res */ }
+    const msg = String(e.userMsg || e.message || e).substr(0, 200);
+    try {
+      if (cfgArxiu_(llegeixBd_()).error !== msg) modifica_(function (b) { cfgArxiu_(b).error = msg; });
+    } catch (e2) { /* res */ }
   }
 }
 

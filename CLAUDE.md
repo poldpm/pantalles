@@ -28,7 +28,8 @@ ha de ser en català, clar i sense sorpreses.
   `POST {action, ...}` amb `Content-Type: text/plain` (evita el preflight CORS).
   - Les dades són a `dades.json` al Drive (bloqueig amb `LockService` i memòria cau en trossos).
   - Les miniatures són a `miniatures.json`.
-  - Hi ha còpia diària a la carpeta «Còpies de seguretat».
+  - Còpies a «Còpies de seguretat»: una cada hora amb canvis (48) i una diària (30). Si `dades.json` és buit o
+    malmès, `llegeixBd_` el recupera sol de la còpia bona més recent (`recuperaDeCopia_`). `desaBd_` mai desa dades buides.
   - Els fitxers es pugen i es baixen **per trossos de 2 MB** amb l'API REST del Drive
     (pujada reanudable i `Range`), perquè són privats i no tenen enllaç públic.
   - Accés al panell: codi de 6 xifres per correu (`MailApp`) i sessió de 30 dies a `ScriptProperties`.
