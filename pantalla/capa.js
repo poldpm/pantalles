@@ -70,7 +70,7 @@
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') bloqueig(); });
 
   /* ---------- Actualitzacions del programa ---------- */
-  var PROGRAMA = ['reproductor.html', 'pantalla.js', 'pantalla.css', '../comu/api.js', '../comu/diapos.js', '../comu/diapos.css', '../comu/marca.css', '../config.js'];
+  var PROGRAMA = ['reproductor.html', '../comu/compat.js', 'pantalla.js', 'pantalla.css', '../comu/api.js', '../comu/diapos.js', '../comu/diapos.css', '../comu/marca.css', '../config.js'];
   var CAPA = ['index.html', 'capa.js'];
   var empremtes = {};
   var capaNova = false;
