@@ -7,9 +7,19 @@
  * ===================================================================== */
 (function () {
   'use strict';
-  var VERSIO = '1.7.0';
+  var VERSIO = '1.8.0';
   var Pnt = window.Pnt;
-  var qs = new URLSearchParams(location.search);
+  // Paràmetres de l'adreça (sense URLSearchParams: les teles Samsung antigues no el tenen)
+  var qs = (function () {
+    var v = {};
+    location.search.replace(/^\?/, '').split('&').forEach(function (p) {
+      if (!p) return;
+      var i = p.indexOf('=');
+      var k = decodeURIComponent(i < 0 ? p : p.substr(0, i)), x = i < 0 ? '' : decodeURIComponent(p.substr(i + 1).replace(/\+/g, ' '));
+      v[k] = x;
+    });
+    return { get: function (k) { return v.hasOwnProperty(k) ? v[k] : null; } };
+  })();
   var PREVIA = qs.get('preview');            // id de pantalla (vista prèvia des del panell)
   // Dins la capa exterior (pantalla/index.html): ella s'encarrega de la pantalla completa
   // i de les actualitzacions del programa, i així una recàrrega no la treu de la pantalla completa.
@@ -54,7 +64,18 @@
     get: function (id) { return PREVIA ? Promise.resolve(memoriaPrevia[id]) : bdOp('mitjans', 'readonly', function (s) { return s.get(id); }); },
     set: function (id, v) { if (PREVIA) { memoriaPrevia[id] = v; return Promise.resolve(); } return bdOp('mitjans', 'readwrite', function (s) { return s.put(v, id); }); },
     del: function (id) { return bdOp('mitjans', 'readwrite', function (s) { return s['delete'](id); }); },
-    claus: function () { return PREVIA ? Promise.resolve(Object.keys(memoriaPrevia)) : bdOp('mitjans', 'readonly', function (s) { return s.getAllKeys(); }).then(function (r) { return r || []; }); }
+    claus: function () { return PREVIA ? Promise.resolve(Object.keys(memoriaPrevia)) : (function () {
+      if (!BD) return Promise.resolve([]);
+      return new Promise(function (ok) {
+        try {
+          var st = BD.transaction('mitjans', 'readonly').objectStore('mitjans');
+          if (st.getAllKeys) { var r = st.getAllKeys(); r.onsuccess = function () { ok(r.result || []); }; r.onerror = function () { ok([]); }; return; }
+          var claus = [], c = st.openCursor();
+          c.onsuccess = function () { var cur = c.result; if (cur) { claus.push(cur.key); cur['continue'](); } else ok(claus); };
+          c.onerror = function () { ok(claus); };
+        } catch (e) { ok([]); }
+      });
+    })(); }
   };
 
   function llegeixLS(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -394,11 +415,18 @@
       var amplePista = pista.clientWidth, ampleText = t.scrollWidth;
       var em = parseFloat(escenari.style.fontSize) || 10;
       var vel = (config.settings.tickerSpeed || 90) * em / 10.8; // px per segon (a 1080p)
-      t.style.setProperty('--inici', amplePista + 'px');
-      t.style.setProperty('--fi', -ampleText + 'px');
-      t.style.animation = 'none';
-      void t.offsetWidth;
-      t.style.animation = 'cinta ' + ((amplePista + ampleText) / vel).toFixed(1) + 's linear infinite';
+      var durada = Math.round((amplePista + ampleText) / vel * 1000);
+      if (t._anim) { t._anim.cancel(); t._anim = null; }
+      if (t.animate) {
+        t._anim = t.animate([{ transform: 'translate(' + amplePista + 'px,-50%)' }, { transform: 'translate(' + (-ampleText) + 'px,-50%)' }], { duration: durada, iterations: Infinity, easing: 'linear' });
+      } else {
+        var nom = 'cinta' + Date.now();
+        var est = document.getElementById('estil-cinta') || document.head.appendChild(document.createElement('style'));
+        est.id = 'estil-cinta';
+        est.textContent = '@keyframes ' + nom + '{from{transform:translate(' + amplePista + 'px,-50%)}to{transform:translate(' + (-ampleText) + 'px,-50%)}}' +
+          '@-webkit-keyframes ' + nom + '{from{-webkit-transform:translate(' + amplePista + 'px,-50%)}to{-webkit-transform:translate(' + (-ampleText) + 'px,-50%)}}';
+        t.style.animation = t.style.webkitAnimation = nom + ' ' + durada + 'ms linear infinite';
+      }
     });
   }
 
@@ -641,7 +669,7 @@
             img.onload = function () { (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(ok); };
             img.onerror = function () { ko(new Error('imatge malmesa')); };
             img.src = u;
-            if (item.kenburns) { capa.classList.add('kenburns'); capa.style.setProperty('--durada', (d || 10) + 's'); }
+            if (item.kenburns) { capa.classList.add('kenburns'); img.style.animationDuration = img.style.webkitAnimationDuration = (d || 10) + 's'; }
             capa.appendChild(img);
             decoraMitja(capa, item);
           } else {

@@ -234,7 +234,6 @@
     var lletres = 'abcdef';
     fotos.slice(0, 6).forEach(function (id, i) {
       var c = el('div', 'dp-collage-foto');
-      c.style.gridArea = lletres[i];
       c.style.backgroundImage = 'url("' + ctx.urlMitja(id) + '")';
       graella.appendChild(c);
     });
@@ -248,9 +247,21 @@
     if (!g || !node.dataset.files) return;
     var files = JSON.parse(node.dataset.files);
     if (vertical) files = transposa(files);
-    g.style.gridTemplateAreas = files.map(function (f) { return '"' + f + '"'; }).join(' ');
-    g.style.gridTemplateColumns = 'repeat(' + files[0].split(' ').length + ', 1fr)';
-    g.style.gridTemplateRows = 'repeat(' + files.length + ', 1fr)';
+    // Posició de cada foto calculada a mà (sense CSS Grid, per a teles antigues)
+    var m = files.map(function (f) { return f.split(' '); });
+    var files_n = m.length, cols_n = m[0].length;
+    var fotos = g.querySelectorAll('.dp-collage-foto');
+    for (var k = 0; k < fotos.length; k++) {
+      var lletra = 'abcdef'.charAt(k), r0 = 99, r1 = -1, c0 = 99, c1 = -1;
+      for (var r = 0; r < files_n; r++) for (var c = 0; c < cols_n; c++) {
+        if (m[r][c] === lletra) { r0 = Math.min(r0, r); r1 = Math.max(r1, r); c0 = Math.min(c0, c); c1 = Math.max(c1, c); }
+      }
+      var st = fotos[k].style;
+      if (r1 < 0) { st.display = 'none'; continue; }
+      st.display = '';
+      st.left = (c0 / cols_n * 100) + '%'; st.width = ((c1 - c0 + 1) / cols_n * 100) + '%';
+      st.top = (r0 / files_n * 100) + '%'; st.height = ((r1 - r0 + 1) / files_n * 100) + '%';
+    }
   }
 
   /** Diu si una foto és horitzontal (si no se'n sap la mida, ho suposem). */

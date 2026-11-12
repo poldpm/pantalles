@@ -118,6 +118,13 @@ Si a la tele no es pot escriure l'adreça, des de **Afegir pantalla → «Fes se
 | **Reproductors Vivitek actuals** | 0 € | Cal comprovar a l'escola si el NovoDS Studio permet afegir una «pàgina web / URL». Si ho permet, es publica **una última vegada** un projecte que només conté aquesta adreça a pantalla completa, i ja no s'ha de tornar a obrir el programa. |
 | **Chromecast amb Google TV / Android TV box** | ~30 € | Només si no hi ha cap altra opció. Amb una app de navegador en mode quiosc (per exemple *Fully Kiosk Browser*) arrenca sola. |
 
+**Pantalla professional Samsung (MagicInfo):** no busquis el navegador a *Source*. Fes servir el **URL Launcher**, que obre la web a pantalla completa i la torna a obrir sola cada vegada que s'encén:
+
+1. Prem **HOME** al comandament (no *Source*). Si et demana un PIN, prova **0000**.
+2. Obre **URL Launcher** → **Settings / Configuració** → **Install Web App** (o *Set URL*) i escriu: `https://poldpm.github.io/pantalles/pantalla/`
+3. Fes que arrenqui sola: **MENU → System → Play via → URL Launcher** (en alguns models: *Home → Settings → System → Play via*).
+4. Apaga i encén la tele per comprovar-ho: ha d'aparèixer sola la pantalla amb el codi de vinculació.
+
 **Ordinador amb Windows que arrenqui sol amb la pantalla:**
 
 1. Instal·la Google Chrome.

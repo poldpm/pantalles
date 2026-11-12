@@ -26,11 +26,12 @@ body.sense-cursor, body.sense-cursor * { cursor: none !important; }
 .tr-zoom.visible { transform: scale(1); }
 
 @keyframes kenburns { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
-.kenburns img.mitja { animation: kenburns var(--durada, 10s) linear forwards; }
+.kenburns img.mitja { animation: kenburns 10s linear forwards; -webkit-animation: kenburns 10s linear forwards; }
+@-webkit-keyframes kenburns { from { -webkit-transform: scale(1); } to { -webkit-transform: scale(1.12) translate(-1.5%, -1%); } }
 
 /* ---------- Rellotge (a dalt a la dreta) ---------- */
 .sup-rellotge { position: absolute; top: 0; right: 0; z-index: 20; background: #821E34; color: #fff; text-align: right;
-  padding: 2em 3.2em 2.2em 4.2em; clip-path: polygon(0 0, 100% 0, 100% 100%, 4.5em 100%, 0 calc(100% - 4.5em)); }
+  padding: 2em 3.2em 2.2em 4.2em; -webkit-clip-path: polygon(0 0, 100% 0, 100% 100%, 4.5em 100%, 0 calc(100% - 4.5em)); clip-path: polygon(0 0, 100% 0, 100% 100%, 4.5em 100%, 0 calc(100% - 4.5em)); }
 .sup-rellotge .h { font-size: 6em; font-weight: 700; font-variant-numeric: tabular-nums; line-height: .95; letter-spacing: -.01em; }
 .sup-rellotge .d { font-size: 2.3em; font-weight: 600; margin-top: .35em; opacity: .9; }
 .sup-rellotge .d::first-letter { text-transform: uppercase; }
@@ -39,20 +40,19 @@ body.sense-cursor, body.sense-cursor * { cursor: none !important; }
 .sup-cinta { position: absolute; left: 0; right: 0; bottom: 0; height: 7em; display: flex; align-items: stretch; z-index: 25;
   background: #821E34; overflow: hidden; }
 .sup-cinta .etiqueta { flex: none; display: flex; align-items: center; padding: 0 5em 0 3em; font-size: 2.6em; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase; background: #FF004E; z-index: 2; clip-path: polygon(0 0, 100% 0, calc(100% - 2.7em) 100%, 0 100%);
+  letter-spacing: .12em; text-transform: uppercase; background: #FF004E; z-index: 2; -webkit-clip-path: polygon(0 0, 100% 0, calc(100% - 2.7em) 100%, 0 100%); clip-path: polygon(0 0, 100% 0, calc(100% - 2.7em) 100%, 0 100%);
   padding-right: 4.2em; margin-right: -1px; }
 .sup-cinta .pista { position: relative; flex: 1; overflow: hidden; }
 .sup-cinta .text { position: absolute; top: 50%; left: 0; white-space: nowrap; font-size: 3.3em; font-weight: 600;
   transform: translate(100vw, -50%); will-change: transform; }
 .sup-cinta .text .sep { display: inline-block; width: .32em; height: .32em; background: #FF004E; margin: 0 1.3em; vertical-align: middle; }
-@keyframes cinta { from { transform: translate(var(--inici), -50%); } to { transform: translate(var(--fi), -50%); } }
 .sup-progres { position: absolute; left: 0; bottom: 0; height: .5em; background: #FF004E; z-index: 26; width: 0; }
 .amb-cinta .sup-progres { bottom: 7em; }
 
 /* ---------- Avisos ---------- */
 .avis-complet { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: flex; flex-direction: column; justify-content: center;
   padding: 9em 30em 19em 9em; box-sizing: border-box; animation: entraAvis .5s ease; background: #821E34; color: #fff; }
-.avis-complet .tall { position: absolute; top: 0; right: 0; width: 26em; height: 26em; clip-path: polygon(0 0, 100% 0, 100% 100%); background: #F4F1ED; }
+.avis-complet .tall { position: absolute; top: 0; right: 0; width: 26em; height: 26em; -webkit-clip-path: polygon(0 0, 100% 0, 100% 100%); clip-path: polygon(0 0, 100% 0, 100% 100%); background: #F4F1ED; }
 .avis-complet .etiqueta { align-self: flex-start; font-size: 3.2em; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; line-height: 1;
   padding: .5em .9em .45em; background: #FF004E; color: #fff; margin-bottom: 1.3em; animation: parpelleig 2.4s ease-in-out infinite; }
 .avis-complet .titol { font-size: 12em; font-weight: 700; line-height: .95; letter-spacing: -.01em; text-wrap: balance; }
@@ -82,7 +82,7 @@ body.sense-cursor, body.sense-cursor * { cursor: none !important; }
 /* ---------- Pantalles del sistema ---------- */
 .sistema { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; background: #821E34; color: #fff; }
-.sistema .tall { position: absolute; top: 0; right: 0; width: 26em; height: 26em; clip-path: polygon(0 0, 100% 0, 100% 100%); background: #F4F1ED; }
+.sistema .tall { position: absolute; top: 0; right: 0; width: 26em; height: 26em; -webkit-clip-path: polygon(0 0, 100% 0, 100% 100%); clip-path: polygon(0 0, 100% 0, 100% 100%); background: #F4F1ED; }
 .sistema .logo { height: 18em; max-width: 70em; object-fit: contain; margin-bottom: 5em; }
 .sistema .nom-escola { font-size: 7em; font-weight: 700; margin-bottom: .7em; }
 .sistema h1 { font-size: 7em; margin: 0 0 .4em; font-weight: 700; line-height: 1; }
