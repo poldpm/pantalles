@@ -20,6 +20,9 @@
     history.replaceState(null, '', location.pathname + neta);
   }
   var proves = /[?&]_prog=(\d+)/.exec(cerca); // només per a proves automàtiques
+  // ?caixa=1: dins d'una capsa de cartelleria (NovoDS…) que ja ocupa tota la pantalla i no té comandament:
+  // no cal demanar la pantalla completa ni mostrar l'avís.
+  var caixa = /[?&]caixa=1/.test(cerca);
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
 
@@ -29,7 +32,7 @@
     return !!ambDocument() || window.matchMedia('(display-mode: fullscreen)').matches ||
       (window.innerHeight >= screen.height - 2 && window.innerWidth >= screen.width - 2);
   }
-  function mostraPista() { if (!jaEsCompleta()) pista.hidden = false; }
+  function mostraPista() { if (!caixa && !jaEsCompleta()) pista.hidden = false; }
   function amagaPista() { pista.hidden = true; }
   function pantallaCompleta() {
     if (ambDocument()) return Promise.resolve();
