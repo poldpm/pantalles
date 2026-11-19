@@ -916,7 +916,7 @@
       '<div class="fila"><label class="camp">Nom<input type="text" data-c="name" value="' + esc(p.name) + '" maxlength="80"></label>' +
       '<label class="camp">On és<input type="text" data-c="location" value="' + esc(p.location || '') + '" maxlength="120"></label></div>' +
       '<div class="fila"><label class="camp">Orientació<select data-c="orientation">' + opt(0, p.orientation, 'Horitzontal') + opt(90, p.orientation, 'Vertical (gira a la dreta)') + opt(270, p.orientation, 'Vertical (gira a l\'esquerra)') + opt(180, p.orientation, 'Cap per avall') + '</select></label>' +
-      '<label class="camp">Fotos<select data-c="fit">' + opt('cover', p.fit, 'Omplir la pantalla (retalla)') + opt('contain', p.fit, 'Senceres (amb fons difuminat)') + '</select></label></div>' +
+      '<label class="camp">Fotos<select data-c="fit">' + opt('cover', p.fit, 'Omplir la pantalla (retalla; les verticals es veuen senceres)') + opt('contain', p.fit, 'Senceres (amb fons difuminat)') + '</select></label></div>' +
       '<div class="fila"><label class="camp">Transició<select data-c="transition">' + opt('', p.transition, 'La general (' + esc(nomTransicio(S.d.settings.defaultTransition)) + ')') + opt('fade', p.transition, 'Fos') + opt('slide', p.transition, 'Desplaçament') + opt('zoom', p.transition, 'Zoom suau') + opt('none', p.transition, 'Cap') + '</select></label>' +
       '<label class="camp">Segons per foto<input type="number" min="0" max="600" data-c="duration" value="' + (p.duration || '') + '" placeholder="General (' + S.d.settings.defaultDuration + ')"></label></div>' +
       '<div class="camp">Elements sobre el contingut<div class="pila" style="gap:10px;font-weight:500;margin-top:4px">' +
@@ -1351,7 +1351,7 @@
         '<label class="camp">Peu de foto (opcional) <span class="ajuda">Surt en un bloc granat a baix. La segona línia, més petita.</span><textarea data-caption rows="2" maxlength="200" placeholder="Sortida al Montseny&#10;3r de primària · dijous 5 de novembre">' + esc(c.caption || '') + '</textarea></label>';
       if (!esVideo) cos += '<label class="interruptor"><input type="checkbox" data-kenburns' + (c.kenburns ? ' checked' : '') + '> Moviment lent sobre la foto</label>';
       cos += '<label class="camp">Enquadrament <span class="ajuda">Quina part de la foto es veu quan s\'ha de retallar.</span><select data-focus>' + '<option value="">Centre</option><option value="top"' + (c.focus === 'top' ? ' selected' : '') + '>A dalt (caps i cares)</option><option value="bottom"' + (c.focus === 'bottom' ? ' selected' : '') + '>A baix</option>' + '</select></label>';
-      cos += '<label class="camp">Com s\'ajusta a la pantalla<select data-fit><option value="">Com digui la pantalla</option><option value="cover"' + (c.fit === 'cover' ? ' selected' : '') + '>Omplir (retalla les vores)</option><option value="contain"' + (c.fit === 'contain' ? ' selected' : '') + '>Sencera (amb fons difuminat)</option></select></label>';
+      cos += '<label class="camp">Com s\'ajusta a la pantalla<select data-fit><option value="">Automàtic (les verticals, senceres amb fons difuminat)</option><option value="cover"' + (c.fit === 'cover' ? ' selected' : '') + '>Omplir (retalla les vores)</option><option value="contain"' + (c.fit === 'contain' ? ' selected' : '') + '>Sencera (amb fons difuminat)</option></select></label>';
     }
     // Comú
     cos += '<div class="fila"><label class="camp">Durada (segons)<input type="number" min="2" max="7200" data-durada value="' + (c.duration || '') + '" placeholder="' +
@@ -1472,7 +1472,7 @@
       w = ample ? 1920 : 960;
     }
     var m = id ? troba(S.d.media, id) : null;
-    if (!m || m.kind !== 'image' || !m.w || !m.h || (c.kind === 'media' && c.fit === 'contain')) { caixa.hidden = true; return; }
+    if (!m || m.kind !== 'image' || !m.w || !m.h || (c.kind === 'media' && (c.fit === 'contain' || (!c.fit && esVertical(m))))) { caixa.hidden = true; return; }
     var amplia = Math.max(w / m.w, h / m.h);
     caixa.hidden = amplia < 1.6;
     caixa.innerHTML = '<b>Aquesta foto es veurà borrosa.</b> Fa ' + m.w + '×' + m.h + ' píxels i a la tele s\'haurà d\'ampliar ' + amplia.toFixed(1).replace('.', ',') +
@@ -1512,13 +1512,17 @@
     });
   }
 
+  /** Foto o vídeo vertical (a les pantalles horitzontals es mostra sencer, amb fons difuminat). */
+  function esVertical(m) { return !!(m && m.w && m.h && m.w < m.h * 0.95); }
   function pintaPreviaItem(caixa, it) {
     $$('.dp', caixa).forEach(function (n) { if (n.atura) n.atura(); });
     caixa.innerHTML = '';
     if (it.kind === 'media') {
       var m = troba(S.d.media, it.mediaId);
       var th = S.thumbs[it.mediaId];
-      caixa.innerHTML = th ? '<img src="' + th + '" alt="" style="object-fit:' + (it.fit === 'contain' ? 'contain' : 'cover') + ';object-position:' + Pnt.diapo.posicio(it.focus) + '">' : '<div class="buit">' + esc(m ? m.name : '') + '</div>';
+      var sencera = it.fit === 'contain' || (!it.fit && esVertical(m));
+      caixa.innerHTML = th ? (sencera ? '<div class="fons-borros" style="background-image:url(\'' + th + '\')"></div>' : '') +
+        '<img src="' + th + '" alt="" style="position:relative;object-fit:' + (sencera ? 'contain' : 'cover') + ';object-position:' + Pnt.diapo.posicio(it.focus) + '">' : '<div class="buit">' + esc(m ? m.name : '') + '</div>';
       if (it.caption) { Pnt.diapo.escala(caixa); caixa.appendChild(Pnt.diapo.peuFoto(it.caption)); }
       return;
     }
@@ -1959,13 +1963,46 @@
     return c.toDataURL('image/jpeg', 0.66);
   }
 
+  /** Orientació EXIF d'un JPEG (1 = dreta). Les fotos de mòbil sovint venen «girades» amb aquesta marca,
+   *  i els navegadors de les teles antigues no la tenen en compte: les tornem a desar ja girades. */
+  function orientacioExif(f) {
+    if (!/jpe?g/i.test(f.type) && !/\.jpe?g$/i.test(f.name)) return Promise.resolve(1);
+    return new Promise(function (ok) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var v = new DataView(fr.result), i = 2;
+          if (v.getUint16(0) !== 0xFFD8) return ok(1);
+          while (i + 4 < v.byteLength) {
+            var marca = v.getUint16(i), llarg = v.getUint16(i + 2);
+            if (marca === 0xFFE1 && v.getUint32(i + 4) === 0x45786966) {
+              var t = i + 10, le = v.getUint16(t) === 0x4949;
+              var ifd = t + v.getUint32(t + 4, le), n = v.getUint16(ifd, le);
+              for (var k = 0; k < n; k++) {
+                var e = ifd + 2 + k * 12;
+                if (v.getUint16(e, le) === 0x0112) return ok(v.getUint16(e + 8, le) || 1);
+              }
+              return ok(1);
+            }
+            if ((marca & 0xFF00) !== 0xFF00) break;
+            i += 2 + llarg;
+          }
+        } catch (e) { /* res */ }
+        ok(1);
+      };
+      fr.onerror = function () { ok(1); };
+      fr.readAsArrayBuffer(f.slice(0, 256 * 1024));
+    });
+  }
+
   function preparaImatge(f, nom) {
     var url = URL.createObjectURL(f);
-    return carregaImatge(url).then(function (img) {
+    var orient = 1;
+    return orientacioExif(f).then(function (o) { orient = o; return carregaImatge(url); }).then(function (img) {
       var w = img.naturalWidth || 800, h = img.naturalHeight || 400;
       var thumb = miniatura(img, w, h);
       var gif = /gif|svg/i.test(f.type);
-      var cal = !gif && (Math.max(w, h) > MAX_COSTAT || f.size > 4 * 1024 * 1024 || /bmp/i.test(f.type));
+      var cal = !gif && (orient !== 1 || Math.max(w, h) > MAX_COSTAT || f.size > 4 * 1024 * 1024 || /bmp/i.test(f.type));
       if (!cal) { URL.revokeObjectURL(url); return { blob: f, name: f.name, mime: f.type || 'image/jpeg', w: w, h: h, thumb: thumb }; }
       var k = Math.min(1, MAX_COSTAT / Math.max(w, h));
       var c = document.createElement('canvas');

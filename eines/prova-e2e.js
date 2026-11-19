@@ -281,6 +281,44 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     await tv.waitForFunction(() => { const c = window.__pantalla.config(); return c && c.items.some((i) => i.caption === '4t de primària'); }, null, { timeout: 30000 });
     ok(true, 'la pantalla rep les fotos publicades de l\'arxiu');
 
+    /* ---------- 12. Fotos verticals i fotos girades ---------- */
+    console.log('Fotos verticals i girades');
+    const fVertical = path.join(FITXERS, 'vertical-exif.jpg'); // 3000×2000 amb la marca EXIF «gira 90°»
+    if (fs.existsSync(fVertical)) {
+      const idLl = await p.evaluate(() => window.__panell.S.d.screens[0].playlists.map((id) => window.__panell.S.d.playlists.find((l) => l.id === id)).find((l) => l && !l.arxiuMes).id);
+      await p.goto(BASE + '/panell/#llista/' + idLl);
+      await p.waitForSelector('[data-zona]');
+      const [tria2] = await Promise.all([p.waitForEvent('filechooser'), p.click('[data-afegeix=pujar]')]);
+      await tria2.setFiles([fVertical]);
+      await p.waitForFunction(() => window.__panell.S.d.media.some((x) => x.name === 'vertical-exif.jpg'), null, { timeout: 30000 });
+      const mv = await p.evaluate(() => window.__panell.S.d.media.find((x) => x.name === 'vertical-exif.jpg'));
+      ok(mv.w < mv.h, 'una foto de mòbil girada (EXIF) es desa ja dreta: ' + mv.w + '×' + mv.h);
+      await tv.waitForFunction(() => { const c = window.__pantalla.config(); return c && c.items.some((i) => i.mediaId && c.media[i.mediaId] && c.media[i.mediaId].name === 'vertical-exif.jpg'); }, null, { timeout: 30000 });
+      let n2 = 0;
+      while (!(await tv.evaluate(() => window.__pantalla.estat().item || '')).startsWith('vertical-exif') && n2++ < 30) { await tv.evaluate(() => window.__pantalla.seguent()); await espera(1300); }
+      await espera(1200);
+      const aj = await tv.evaluate(() => { const c = document.querySelector('.capa.visible'); return c && { contain: c.classList.contains('ajust-contain'), fons: !!c.querySelector('.fons-borros') }; });
+      ok(aj && aj.contain && aj.fons, 'la foto vertical surt sencera amb fons difuminat (la pantalla diu «omplir»)');
+      await captura(tv, '18-pantalla-foto-vertical');
+    }
+    await fetch(BASE + '/__bustia?nom=girada.jpg&mime=image/jpeg&rot=1', { method: 'POST', body: fs.readFileSync(path.join(FITXERS, 'foto1.jpg')) });
+    await p.goto(BASE + '/panell/#biblioteca');
+    await p.click('[data-accio=bustia]');
+    await p.click('[data-importa]');
+    await p.waitForFunction(() => window.__panell.S.d.media.some((x) => x.name === 'girada.jpg'), null, { timeout: 15000 });
+    const mg = await p.evaluate(() => window.__panell.S.d.media.find((x) => x.name === 'girada.jpg'));
+    ok(mg.w < mg.h, 'la bústia redreça les fotos girades: ' + mg.w + '×' + mg.h);
+    const idVell = await p.evaluate(() => window.__panell.S.d.media.find((x) => x.name === 'bustia.jpg').id);
+    await fetch(BASE + '/__gira?nom=bustia.jpg');
+    await fetch(BASE + '/__revisaBustia');
+    await fetch(BASE + '/__revisaBustia'); // n'arregla unes quantes cada vegada
+    await p.reload();
+    await p.waitForFunction(() => window.__panell.S.d && window.__panell.S.d.media.length > 0, null, { timeout: 15000 });
+    const mb = await p.evaluate(() => window.__panell.S.d.media.find((x) => x.name === 'bustia.jpg'));
+    ok(mb && mb.w < mb.h && mb.id !== idVell, 'les fotos girades que ja hi havia a la biblioteca es redrecen soles' + (mb ? ' (' + mb.w + '×' + mb.h + ')' : ''));
+    const refsVelles = await p.evaluate((v) => JSON.stringify(window.__panell.S.d).indexOf('"' + v + '"'), idVell);
+    ok(refsVelles < 0, 'les llistes apunten a la foto redreçada');
+
     ok(errorsTv.length === 0, 'cap error de JavaScript a la pantalla' + (errorsTv.length ? ': ' + errorsTv.join(' | ') : ''));
     ok(errorsP.length === 0, 'cap error de JavaScript al panell' + (errorsP.length ? ': ' + errorsP.join(' | ') : ''));
   } catch (e) {

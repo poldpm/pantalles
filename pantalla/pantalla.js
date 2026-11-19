@@ -7,7 +7,7 @@
  * ===================================================================== */
 (function () {
   'use strict';
-  var VERSIO = '1.8.0';
+  var VERSIO = '1.9.0';
   var Pnt = window.Pnt;
   // Paràmetres de l'adreça (sense URLSearchParams: les teles Samsung antigues no el tenen)
   var qs = (function () {
@@ -618,8 +618,7 @@
     var capa = document.createElement('div');
     var tr = item.transition || config.screen.transition || config.settings.defaultTransition || 'fade';
     capa.className = 'capa tr-' + tr;
-    var ajust = item.fit || config.screen.fit || 'cover';
-    capa.classList.add('ajust-' + ajust);
+    capa.classList.add('ajust-' + ajustMitja(item));
     var d = durada(item);
     var llest = false;
     var vigilancia = setTimeout(function () { if (!llest) falla(capa, item, 'No s\'ha pogut carregar a temps'); }, 20000);
@@ -654,13 +653,26 @@
     temporitzador = setTimeout(seguent, 800);
   }
 
+  /** Com s'ajusta una foto o un vídeo: el que digui l'element; si no en diu res, les fotos i vídeos
+   *  verticals en una pantalla horitzontal (o al revés) es mostren sencers amb fons difuminat;
+   *  la resta, com digui la pantalla. */
+  function ajustMitja(item) {
+    if (item.fit) return item.fit;
+    var m = item.kind === 'media' && config.media[item.mediaId];
+    if (m && m.w && m.h) {
+      var W = parseFloat(escenari.style.width) || window.innerWidth, H = parseFloat(escenari.style.height) || window.innerHeight;
+      if ((m.w < m.h * 0.95) !== (W < H * 0.95)) return 'contain';
+    }
+    return config.screen.fit || 'cover';
+  }
+
   function prepara(item, capa, d) {
     return new Promise(function (ok, ko) {
       if (item.kind === 'media') {
         var meta = config.media[item.mediaId];
         urlMitja(item.mediaId, function (u) {
           if (!u) return ko(new Error('fitxer no descarregat'));
-          var ajust = item.fit || config.screen.fit || 'cover';
+          var ajust = ajustMitja(item);
           if (meta.kind === 'image') {
             if (ajust === 'contain') { var fb = document.createElement('div'); fb.className = 'fons-borros'; fb.style.backgroundImage = 'url("' + u + '")'; capa.appendChild(fb); }
             var img = new Image();

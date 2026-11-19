@@ -165,6 +165,8 @@ const serveis = {
           const tros = r ? f.data.subarray(+r[1], +r[2] + 1) : f.data;
           return resposta(r ? 206 : 200, Buffer.from(tros));
         }
+        // Metadades: com el Drive, «rotation» diu si la foto ve girada (marca EXIF)
+        if (/^image\//.test(f.mime)) return resposta(200, { thumbnailLink: 'https://miniatura.prova/' + f.id + '=s220', imageMediaMetadata: { width: 3000, height: 2000, rotation: f.rot || 0 } });
         return resposta(200, {});
       }
       return resposta(404, 'no imitat: ' + url);
@@ -213,13 +215,17 @@ const servidor = http.createServer((req, res) => {
     const parts = [];
     req.on('data', (c) => parts.push(c));
     req.on('end', () => {
-      const f = { id: nouIdDrive(), name: url.searchParams.get('nom') || 'foto.png', mime: url.searchParams.get('mime') || 'image/png', data: Buffer.concat(parts), parent: propietats.carpeta_bustia, trashed: false };
+      const f = { id: nouIdDrive(), name: url.searchParams.get('nom') || 'foto.png', mime: url.searchParams.get('mime') || 'image/png', data: Buffer.concat(parts), parent: propietats.carpeta_bustia, trashed: false, rot: +(url.searchParams.get('rot') || 0) };
       fitxers[f.id] = f;
       res.end(JSON.stringify({ id: f.id }));
     });
     return;
   }
   if (url.pathname === '/__revisaBustia') { context.__revisaBustia(); return res.end('ok'); }
+  if (url.pathname === '/__gira') { // simula que un fitxer ja pujat era una foto girada (EXIF)
+    Object.values(fitxers).forEach((f) => { if (f.name === url.searchParams.get('nom') && !f.trashed) f.rot = 1; });
+    return res.end('ok');
+  }
   if (url.pathname === '/__arxiu' && req.method === 'POST') { // simula que un curs deixa una foto a «Per penjar»
     const parts = [];
     req.on('data', (c) => parts.push(c));

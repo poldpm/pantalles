@@ -295,6 +295,7 @@ input[type=color] { width: 44px; height: 38px; padding: 2px; border: 1px solid v
 .previa-caixa.vertical { aspect-ratio: 9/16; max-height: 60vh; margin: 0 auto; }
 .previa-caixa iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .previa-caixa img, .previa-caixa video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.previa-caixa .fons-borros { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: blur(14px) brightness(.55); }
 .marc-previa { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 0; overflow: hidden; }
 .marc-previa iframe { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; border: 0; transform-origin: 0 0; }
 .marc-previa.vertical { aspect-ratio: 9/16; max-width: 360px; margin: 0 auto; }

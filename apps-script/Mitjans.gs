@@ -136,11 +136,99 @@ function accioLlistaBustia_() {
   return { files: fitxersBustia_(), folderUrl: 'https://drive.google.com/drive/folders/' + idCarpeta_('bustia') };
 }
 
+/* ---------- Fotos girades ----------
+ * Les fotos de mòbil sovint es desen «de costat» amb una marca (EXIF) que diu com s'han de girar.
+ * Els navegadors de les teles antigues no la tenen en compte i les mostren girades. El Drive ja les
+ * sap girar: en fem una còpia (2560 px com a màxim) ja dreta. */
+function copiaDreta_(idFitxer, nom) {
+  const r = UrlFetchApp.fetch(API_DRIVE + idFitxer + '?supportsAllDrives=true&fields=thumbnailLink,imageMediaMetadata(width,height,rotation)', { headers: capcaleresDrive_(), muteHttpExceptions: true });
+  const codi = r.getResponseCode();
+  if (codi === 404 || codi === 403) return { dreta: true }; // no hi podem fer res
+  if (codi !== 200) return null;
+  const d = JSON.parse(r.getContentText());
+  const im = d.imageMediaMetadata || {};
+  if (!im.rotation || !d.thumbnailLink || !im.width) return { dreta: true };
+  const t = UrlFetchApp.fetch(d.thumbnailLink.replace(/=s\d+(-c)?$/, '') + '=s2560', { headers: capcaleresDrive_(), muteHttpExceptions: true });
+  if (t.getResponseCode() !== 200) return null;
+  const blob = t.getBlob();
+  blob.setName(String(nom || 'foto').replace(/\.[^.]+$/, '') + '.jpg');
+  const f = DriveApp.getFolderById(idCarpeta_('mitjans')).createFile(blob);
+  const gira = im.rotation === 1 || im.rotation === 3;
+  let w = gira ? im.height : im.width, h = gira ? im.width : im.height;
+  const k = Math.min(1, 2560 / Math.max(w, h));
+  return { dreta: false, driveId: f.getId(), name: blob.getName(), mime: 'image/jpeg', size: f.getSize(), w: Math.round(w * k), h: Math.round(h * k) };
+}
+
+/** Revisa unes quantes fotos de la biblioteca cada vegada (activador de 10 min) i arregla les girades. */
+function arreglaFotosGirades_() {
+  const bd = llegeixBd_();
+  const pendents = bd.media.filter(function (m) { return m.kind === 'image' && !m.dreta && m.driveId; }).slice(0, 15);
+  if (!pendents.length) return 0;
+  const fets = [];
+  pendents.forEach(function (m) {
+    try {
+      const c = copiaDreta_(m.driveId, m.name);
+      if (c) fets.push({ id: m.id, c: c, vell: m.driveId });
+    } catch (e) { /* ho tornarem a provar */ }
+  });
+  if (!fets.length) return 0;
+  const canvis = {}; // id vell → id nou (les pantalles guarden els fitxers per id: cal un id nou perquè el tornin a baixar)
+  modifica_(function (b) {
+    fets.forEach(function (x) {
+      const m = troba_(b.media, x.id);
+      if (!m) return;
+      if (x.c.dreta) { m.dreta = true; return; }
+      canvis[m.id] = nouId_('m');
+      m.driveId = x.c.driveId; m.mime = x.c.mime; m.size = x.c.size; m.w = x.c.w; m.h = x.c.h; m.dreta = true;
+    });
+    if (!Object.keys(canvis).length) return;
+    let txt = JSON.stringify(b);
+    Object.keys(canvis).forEach(function (v) { txt = txt.split('"' + v + '"').join('"' + canvis[v] + '"'); });
+    const nou = JSON.parse(txt);
+    Object.keys(nou).forEach(function (k) { b[k] = nou[k]; });
+    const nousIds = Object.keys(canvis).map(function (v) { return '"' + canvis[v] + '"'; });
+    b.playlists.forEach(function (l) {
+      const t = JSON.stringify(l);
+      if (nousIds.some(function (x) { return t.indexOf(x) >= 0; })) l.v = (l.v || 0) + 1; // el panell ha de recarregar la llista
+    });
+    registra_(b, 'sistema', 'Ha redreçat ' + Object.keys(canvis).length + ' foto' + (Object.keys(canvis).length > 1 ? 's' : '') + ' que sortien girades');
+  });
+  if (Object.keys(canvis).length) {
+    modificaMiniatures_(function (mini) { Object.keys(canvis).forEach(function (v) { if (mini[v]) { mini[canvis[v]] = mini[v]; delete mini[v]; } }); });
+    fets.forEach(function (x) { if (x.c && !x.c.dreta && canvis[x.id]) { try { DriveApp.getFileById(x.vell).setTrashed(true); } catch (e) { /* res */ } } });
+  }
+  return Object.keys(canvis).length;
+}
+
+/** Miniatura petita (240 px, ja ben girada) d'un fitxer del Drive. */
+function miniaturaDrive_(idFitxer) {
+  try {
+    const r = UrlFetchApp.fetch(API_DRIVE + idFitxer + '?supportsAllDrives=true&fields=thumbnailLink', { headers: capcaleresDrive_(), muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) return '';
+    const l = JSON.parse(r.getContentText()).thumbnailLink;
+    if (!l) return '';
+    const t = UrlFetchApp.fetch(l.replace(/=s\d+(-c)?$/, '') + '=s240', { headers: capcaleresDrive_(), muteHttpExceptions: true });
+    return t.getResponseCode() === 200 ? 'data:image/jpeg;base64,' + Utilities.base64Encode(t.getContent()) : '';
+  } catch (e) { return ''; }
+}
+
 function importaDeBustia_(idFitxer, idLlista, qui) {
   const f = DriveApp.getFileById(idFitxer);
   const mime = f.getMimeType();
   const kind = tipusMitja_(mime);
   if (!kind) return null;
+  if (kind === 'image') {
+    // Si la foto ve girada (EXIF), en desem una còpia ja dreta i llencem l'original
+    let c = null;
+    try { c = copiaDreta_(idFitxer, f.getName()); } catch (e) { c = null; }
+    if (c && !c.dreta) {
+      const mc = miniaturaDrive_(idFitxer);
+      f.moveTo(DriveApp.getFolderById(idCarpeta_('mitjans')));
+      f.setTrashed(true);
+      return registraMitja_({ driveId: c.driveId, name: c.name, mime: c.mime, kind: 'image', size: c.size, w: c.w, h: c.h, duration: 0, by: qui, dreta: true },
+        mc.length < 60000 ? mc : '', idLlista, qui);
+    }
+  }
   let info = {};
   try {
     const r = UrlFetchApp.fetch(API_DRIVE + idFitxer + '?fields=thumbnailLink,imageMediaMetadata(width,height),videoMediaMetadata(width,height,durationMillis)', { headers: capcaleresDrive_(), muteHttpExceptions: true });
@@ -175,6 +263,7 @@ function accioImportaBustia_(req, u) {
 function revisaBustia() {
   // Aprofitem aquest activador (cada 10 minuts) per mirar també l'arxiu fotogràfic
   if (typeof revisaArxiu === 'function') revisaArxiu();
+  try { arreglaFotosGirades_(); } catch (e) { console.log('Fotos girades: ' + e.message); }
   const bd = llegeixBd_();
   const idLlista = bd.settings.bustiaPlaylistId;
   if (!idLlista || !troba_(bd.playlists, idLlista)) return;
