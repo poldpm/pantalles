@@ -1730,12 +1730,18 @@
     return u;
   }
 
+  /** « · Vertical» / « · Horitzontal» / « · Quadrada» (si en sabem la mida). */
+  function orientacioText(m) {
+    if (!m.w || !m.h) return '';
+    return ' · ' + (m.w < m.h * 0.95 ? 'Vertical' : m.h < m.w * 0.95 ? 'Horitzontal' : 'Quadrada');
+  }
+
   function htmlMitja(m, usos, triat) {
     var th = S.thumbs[m.id];
     return '<button type="button" class="mitja' + (triat ? ' triat' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? IC('play') : IC('biblioteca')) + '</div>' +
       (m.kind === 'video' ? '<span class="tipus badge" style="background:rgba(0,0,0,.65);color:#fff">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') +
       (triat !== undefined ? '<span class="marca">' + (triat ? IC('fet', 16) : '') + '</span>' : '') +
-      '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + mida(m.size) +
+      '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + mida(m.size) + orientacioText(m) +
       (usos ? (usos.length ? ' · a ' + usos.length + ' llist' + (usos.length > 1 ? 'es' : 'a') : ' · sense fer servir') : '') + '</span></div></button>';
   }
 
