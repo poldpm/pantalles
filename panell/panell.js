@@ -591,7 +591,7 @@
   /* ------------------------------------------------------------------
    *  INICI
    * ---------------------------------------------------------------- */
-  var VERSIO_SERVEI = '1.7.0';
+  var VERSIO_SERVEI = '1.8.0';
   function serveiAntic() {
     var v = (S.d && S.d.version) || '0';
     var a = v.split('.').map(Number), b = VERSIO_SERVEI.split('.').map(Number);
@@ -1690,7 +1690,7 @@
     var d = S.d;
     var usos = usosMitjans();
     var html = '<div class="capcalera"><div><h2>Biblioteca</h2><p>Totes les fotos i vídeos. Es guarden de manera privada al Drive de l\'escola.</p></div>' +
-      '<button class="btn" data-accio="bustia">' + IC('bustia') + 'Bústia del Drive</button></div>' +
+      '<div class="btns"><button class="btn" data-accio="duplicats">' + IC('collage') + 'Fotos repetides</button><button class="btn" data-accio="bustia">' + IC('bustia') + 'Bústia del Drive</button></div></div>' +
       '<div class="zona-pujada" data-zona tabindex="0" role="button"><div class="gran-ic">' + IC('pujar') + '</div><b>Arrossega aquí fotos, vídeos o PDF</b><span class="subtil">o fes clic per triar-los (des del mòbil també pots fer fotos)</span>' +
       '<div class="molt-subtil" style="margin-top:6px">Del Canva: Comparteix → Baixa → <b>PDF</b> (cada pàgina serà una diapositiva), <b>PNG</b> o <b>MP4</b> (amb animacions).</div></div>';
     html += '<div class="filtres"><div class="segment">' + [['', 'Tot (' + d.media.length + ')'], ['image', 'Fotos'], ['video', 'Vídeos'], ['nous', 'Sense fer servir']].map(function (f) {
@@ -1720,6 +1720,7 @@
     zona.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triaFitxersIPuja(null); } };
     zonaArrossegar(zona, function (f) { puja(f, null); });
     $('[data-accio=bustia]').onclick = obreBustia;
+    $('[data-accio=duplicats]').onclick = obreDuplicats;
   };
 
   function usosMitjans() {
@@ -1762,7 +1763,7 @@
   function htmlMitja(m, usos, triat, posada) {
     var th = S.thumbs[m.id];
     return '<button type="button" class="mitja' + (triat ? ' triat' : '') + (posada ? ' ja-posada' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? IC('play') : IC('biblioteca')) +
-      (posada ? '<span class="posada">' + IC('fet', 14) + posada + '</span>' : '') + '</div>' +
+      '</div>' + (posada ? '<span class="posada">' + IC('fet', 14) + posada + '</span>' : '') +
       (m.kind === 'video' ? '<span class="tipus badge" style="background:rgba(0,0,0,.65);color:#fff">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') +
       (triat !== undefined ? '<span class="marca">' + (triat ? IC('fet', 16) : '') + '</span>' : '') +
       '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + mida(m.size) + orientacioText(m) +
@@ -1814,6 +1815,109 @@
           });
         };
       }
+    });
+  }
+
+  /* ---------- Fotos repetides ----------
+   * Compara les miniatures de totes les fotos (reduïdes a 16×16 punts, i la proporció):
+   * troba les còpies encara que s'hagin pujat per camins diferents (arxiu, bústia, panell) i
+   * tinguin una mida diferent. Els vídeos es comparen per mida exacta del fitxer. */
+  function empremtaFoto(src) {
+    return new Promise(function (ok) {
+      var im = new Image();
+      im.onload = function () {
+        try {
+          var c = document.createElement('canvas'); c.width = 16; c.height = 16;
+          var cx = c.getContext('2d'); cx.drawImage(im, 0, 0, 16, 16);
+          var d = cx.getImageData(0, 0, 16, 16).data, px = [];
+          for (var i = 0; i < 256; i++) px.push(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+          ok({ px: px, prop: im.naturalWidth / im.naturalHeight });
+        } catch (e) { ok(null); }
+      };
+      im.onerror = function () { ok(null); };
+      im.src = src;
+    });
+  }
+  function semblants(a, b, ma, mb) {
+    if (!a || !b) return false;
+    var pa = ma.w && ma.h ? ma.w / ma.h : a.prop, pb = mb.w && mb.h ? mb.w / mb.h : b.prop;
+    if (Math.abs(pa - pb) / Math.max(pa, pb) > 0.04) return false;
+    // Diferència mitjana punt a punt (0-255): les còpies d'una mateixa foto queden per sota de 8
+    var dif = 0;
+    for (var i = 0; i < a.px.length; i++) dif += Math.abs(a.px[i] - b.px[i]);
+    return dif / a.px.length < 8;
+  }
+  function trobaDuplicats() {
+    var fotos = S.d.media.filter(function (m) { return m.kind === 'image' && S.thumbs[m.id]; });
+    return Promise.all(fotos.map(function (m) { return empremtaFoto(S.thumbs[m.id]); })).then(function (emp) {
+      var pare = {};
+      var arrel = function (x) { while (pare[x] && pare[x] !== x) x = pare[x]; return x; };
+      var uneix = function (a, b) { var ra = arrel(a), rb = arrel(b); if (ra !== rb) pare[rb] = ra; };
+      S.d.media.forEach(function (m) { pare[m.id] = m.id; });
+      for (var i = 0; i < fotos.length; i++) for (var j = i + 1; j < fotos.length; j++) if (semblants(emp[i], emp[j], fotos[i], fotos[j])) uneix(fotos[i].id, fotos[j].id);
+      var videos = S.d.media.filter(function (m) { return m.kind === 'video' && m.size; });
+      for (var a = 0; a < videos.length; a++) for (var b = a + 1; b < videos.length; b++) if (videos[a].size === videos[b].size) uneix(videos[a].id, videos[b].id);
+      var grups = {};
+      S.d.media.forEach(function (m) { var rr = arrel(m.id); (grups[rr] = grups[rr] || []).push(m); });
+      var usos = usosMitjans();
+      return Object.keys(grups).map(function (k) { return grups[k]; }).filter(function (g) { return g.length > 1; }).map(function (g) {
+        // Es queda la de més resolució; si n'hi ha d'iguals, la que surt a més llistes, i si no, la més antiga
+        g.sort(function (x, y) {
+          return ((y.w || 0) * (y.h || 0)) - ((x.w || 0) * (x.h || 0)) || ((usos[y.id] || []).length - (usos[x.id] || []).length) || String(x.at).localeCompare(String(y.at));
+        });
+        return { membres: g, keep: g[0].id, on: true };
+      });
+    });
+  }
+  function obreDuplicats() {
+    obreModal({ titol: 'Fotos repetides', classe: 'molt-ample', cos: '<div style="text-align:center;padding:30px"><span class="roda"></span><p class="subtil">Comparant totes les fotos…</p></div>' });
+    miniaturesQueFalten().then(trobaDuplicats).then(function (grups) {
+      var usos = usosMitjans();
+      if (!grups.length) {
+        obreModal({ titol: 'Fotos repetides', cos: '<div class="buit">No hi ha cap foto repetida. 👍</div>', peu: '<button class="btn primari" data-tanca>D\'acord</button>' });
+        return;
+      }
+      var pintaGrups = function (el) {
+        $('[data-grups]', el).innerHTML = grups.map(function (g, gi) {
+          return '<div class="grup-dup' + (g.on ? '' : ' apagat') + '"><label class="interruptor"><input type="checkbox" data-gon="' + gi + '"' + (g.on ? ' checked' : '') + '> <b>' + g.membres.length + ' còpies</b> <span class="molt-subtil">· toca la que vols conservar</span></label><div class="mitjans">' +
+            g.membres.map(function (m) {
+              var queda = m.id === g.keep, u = usos[m.id] || [];
+              var th = S.thumbs[m.id];
+              return '<button type="button" class="mitja' + (queda ? ' triat' : ' ja-posada') + '" data-g="' + gi + '" data-m="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '"></div>' +
+                '<span class="posada' + (queda ? ' queda' : '') + '">' + (queda ? IC('fet', 14) + 'Es queda' : IC('esborra', 14) + 'S\'esborra') + '</span>' +
+                '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + (m.w ? m.w + '×' + m.h + ' px · ' : '') + mida(m.size) +
+                ' · ' + (u.length ? 'a ' + u.length + ' llist' + (u.length > 1 ? 'es' : 'a') : 'sense fer servir') + '</span></div></button>';
+            }).join('') + '</div></div>';
+        }).join('');
+        $$('[data-gon]', el).forEach(function (c) { c.onchange = function () { grups[+c.dataset.gon].on = c.checked; pintaGrups(el); }; });
+        $$('[data-grups] .mitja', el).forEach(function (b) { b.onclick = function () { grups[+b.dataset.g].keep = b.dataset.m; pintaGrups(el); }; });
+        var n = grups.reduce(function (t, g) { return t + (g.on ? g.membres.length - 1 : 0); }, 0);
+        $('[data-ok]', el).disabled = !n;
+        $('[data-ok]', el).textContent = 'Esborra ' + n + ' còpi' + (n === 1 ? 'a' : 'es');
+      };
+      obreModal({
+        titol: 'Fotos repetides', classe: 'molt-ample',
+        cos: '<p class="subtil" style="margin-top:0">He trobat <b>' + grups.length + ' fotos</b> que hi són més d\'una vegada. De cada una se\'n queda <b>una sola</b> (per defecte, la de més qualitat). ' +
+          'Les llistes, els collages i els logotips passaran a fer servir la que es queda: <b>a les pantalles no es notarà res</b>. Les còpies van a la paperera del Drive (s\'hi poden recuperar durant 30 dies).</p><div class="pila" data-grups></div>',
+        peu: '<button class="btn" data-tanca>Cancel·la</button><button class="btn primari" data-ok>Esborra</button>',
+        enObrir: function (el) {
+          pintaGrups(el);
+          $('[data-ok]', el).onclick = function () {
+            var envia = grups.filter(function (g) { return g.on; }).map(function (g) {
+              return { keep: g.keep, remove: g.membres.map(function (m) { return m.id; }).filter(function (id) { return id !== g.keep; }) };
+            });
+            var b = this; b.disabled = true; b.innerHTML = '<span class="roda"></span> Esborrant…';
+            var lots = [], fets = 0;
+            for (var i = 0; i < envia.length; i += 40) lots.push(envia.slice(i, i + 40));
+            var cadena = Promise.resolve();
+            lots.forEach(function (lot) { cadena = cadena.then(function () { return crida('mergeMedia', { groups: lot }, { desa: true, timeout: 300000 }).then(function (rr) { fets += rr.removed || 0; }); }); });
+            cadena.then(function () { return carrega(); }).then(function () {
+              tancaModal(); render(true);
+              toast(fets + (fets === 1 ? ' còpia esborrada' : ' còpies esborrades') + '. Les llistes fan servir la que s\'ha quedat.', 'ok', 6000);
+            }, function () { b.disabled = false; b.textContent = 'Torna-ho a provar'; });
+          };
+        }
+      });
     });
   }
 

@@ -201,7 +201,7 @@ function arreglaFotosGirades_() {
 }
 
 /** Miniatura petita (240 px, ja ben girada) d'un fitxer del Drive. */
-function miniaturaDrive_(idFitxer) {
+function miniaturaFitxer_(idFitxer) {
   try {
     const r = UrlFetchApp.fetch(API_DRIVE + idFitxer + '?supportsAllDrives=true&fields=thumbnailLink', { headers: capcaleresDrive_(), muteHttpExceptions: true });
     if (r.getResponseCode() !== 200) return '';
@@ -222,7 +222,7 @@ function importaDeBustia_(idFitxer, idLlista, qui) {
     let c = null;
     try { c = copiaDreta_(idFitxer, f.getName()); } catch (e) { c = null; }
     if (c && !c.dreta) {
-      const mc = miniaturaDrive_(idFitxer);
+      const mc = miniaturaFitxer_(idFitxer);
       f.moveTo(DriveApp.getFolderById(idCarpeta_('mitjans')));
       f.setTrashed(true);
       return registraMitja_({ driveId: c.driveId, name: c.name, mime: c.mime, kind: 'image', size: c.size, w: c.w, h: c.h, duration: 0, by: qui, dreta: true },
@@ -273,6 +273,68 @@ function revisaBustia() {
 }
 
 /* ---------- Esborrar ---------- */
+/* ---------- Fotos repetides ----------
+ * El panell troba les fotos iguals (comparant les miniatures) i ens envia grups {keep, remove:[…]}.
+ * Totes les llistes, collages, fons i logotips passen a apuntar a la que es queda; les altres
+ * s'esborren de la biblioteca i van a la paperera del Drive. */
+function accioFusionaMitjans_(req, u) {
+  const grups = [].concat(req.groups || []).slice(0, 200);
+  const llencar = []; // fitxers del Drive que van a la paperera
+  const esborrats = [];
+  modifica_(function (bd) {
+    const canvis = {}; // id esborrat → id que es queda
+    grups.forEach(function (g) {
+      const keep = troba_(bd.media, g.keep);
+      if (!keep) return;
+      [].concat(g.remove || []).forEach(function (id) {
+        if (id === keep.id || canvis[id]) return;
+        const m = troba_(bd.media, id);
+        if (!m || m.kind !== keep.kind) return;
+        canvis[id] = keep.id;
+      });
+    });
+    const ids = Object.keys(canvis);
+    if (!ids.length) return;
+    // Si un dels que es queden també s'havia d'esborrar (cadenes), segueix la cadena
+    ids.forEach(function (id) { let d = canvis[id], n = 0; while (canvis[d] && n++ < 20) d = canvis[d]; canvis[id] = d; });
+    bd.media = bd.media.filter(function (m) {
+      if (!canvis[m.id]) return true;
+      llencar.push(m.driveId); esborrats.push(m.id);
+      return false;
+    });
+    const subst = function (id) { return canvis[id] || id; };
+    bd.playlists.forEach(function (l) {
+      let tocada = false;
+      const vistos = {};
+      l.items = l.items.filter(function (it) {
+        if (it.mediaId && canvis[it.mediaId]) { it.mediaId = subst(it.mediaId); tocada = true; }
+        if (it.text && it.text.bgMediaId && canvis[it.text.bgMediaId]) { it.text.bgMediaId = subst(it.text.bgMediaId); tocada = true; }
+        if (it.kind === 'collage' && it.photos) {
+          const abans = it.photos.join();
+          const unics = [];
+          it.photos.map(subst).forEach(function (x) { if (unics.indexOf(x) < 0) unics.push(x); });
+          it.photos = unics;
+          if (it.photos.join() !== abans) tocada = true;
+        }
+        // La mateixa foto dues vegades a la llista (eren dues còpies): en deixem una
+        if (it.kind === 'media') {
+          if (vistos[it.mediaId]) { tocada = true; return false; }
+          vistos[it.mediaId] = true;
+        }
+        return it.kind !== 'collage' || (it.photos || []).length >= 2;
+      });
+      if (tocada) l.v = (l.v || 0) + 1;
+    });
+    if (canvis[bd.settings.logoMediaId]) bd.settings.logoMediaId = subst(bd.settings.logoMediaId);
+    if (canvis[bd.settings.logoNegMediaId]) bd.settings.logoNegMediaId = subst(bd.settings.logoNegMediaId);
+    if (bd.arxiu && bd.arxiu.aprovades) bd.arxiu.aprovades.forEach(function (a) { if (canvis[a.mediaId]) a.mediaId = subst(a.mediaId); });
+    registra_(bd, u.email, 'Ha esborrat ' + ids.length + ' foto' + (ids.length > 1 ? 's' : '') + ' repetida' + (ids.length > 1 ? 's' : '') + ' (les llistes fan servir la que es queda)');
+  });
+  llencar.forEach(function (id) { if (id) { try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* ja no hi era */ } } });
+  if (esborrats.length) modificaMiniatures_(function (mini) { esborrats.forEach(function (id) { delete mini[id]; }); });
+  return { removed: esborrats.length };
+}
+
 function accioEsborraMitja_(req, u) {
   let driveId = null;
   modifica_(function (bd) {

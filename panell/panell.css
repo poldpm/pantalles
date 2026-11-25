@@ -222,8 +222,14 @@ input[type=color] { width: 44px; height: 38px; padding: 2px; border: 1px solid v
   display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; }
 .mitja.triat .marca { background: var(--accent); }
 .mitja .img { position: relative; }
-.mitja .posada { position: absolute; left: 0; bottom: 0; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: #821E34; color: #fff; font-size: 12px; font-weight: 600; }
-.mitja.ja-posada .img { box-shadow: inset 0 0 0 3px #821E34; }
+.mitja .posada { position: absolute; left: 0; top: 0; z-index: 1; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: #821E34; color: #fff; font-size: 12px; font-weight: 600; }
+.mitja.ja-posada .img { -webkit-filter: grayscale(1); filter: grayscale(1); opacity: .45; }
+.mitja.ja-posada .peu { opacity: .6; }
+.mitja.ja-posada .tipus { top: 34px; }
+.mitja .posada.queda { background: #2D2926; }
+.grup-dup { border: 1px solid var(--vora); padding: 12px; background: var(--superficie); }
+.grup-dup.apagat .mitjans { opacity: .35; pointer-events: none; }
+.grup-dup .mitjans { margin-top: 10px; }
 .pujades { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .pujada { display: flex; gap: 12px; align-items: center; padding: 10px 12px; background: var(--superficie); border: 1px solid var(--vora); border-radius: 0; font-size: 14px; }
 .pujada .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -39,6 +39,7 @@ function accionsPanell_() { return {
   screenCommand: [accioOrdrePantalla_, false],
   saveMedia: [accioDesaMitja_, false],
   deleteMedia: [accioEsborraMitja_, false],
+  mergeMedia: [accioFusionaMitjans_, false],
   uploadStart: [accioIniciaPujada_, false],
   uploadChunk: [accioTrosPujada_, false],
   bustiaList: [accioLlistaBustia_, false],
@@ -123,7 +124,23 @@ function accioEstat_(req, u) {
 function accioMiniatures_(req, u) {
   const totes = llegeixMiniatures_();
   const res = {};
-  [].concat(req.ids || []).slice(0, 300).forEach(function (id) { if (totes[id]) res[id] = totes[id]; });
+  const falten = [];
+  [].concat(req.ids || []).slice(0, 300).forEach(function (id) { if (totes[id]) res[id] = totes[id]; else falten.push(id); });
+  // Fotos sense miniatura: la demanem al Drive (unes quantes cada vegada, perquè no trigui)
+  if (falten.length) {
+    const bd = llegeixBd_();
+    const noves = {};
+    let fetes = 0;
+    falten.forEach(function (id) {
+      if (fetes >= 25) return;
+      const m = troba_(bd.media, id);
+      if (!m || !m.driveId || m.kind !== 'image') return;
+      fetes++;
+      const mini = miniaturaFitxer_(m.driveId);
+      if (mini && mini.length < 60000) { noves[id] = mini; res[id] = mini; }
+    });
+    if (Object.keys(noves).length) modificaMiniatures_(function (t) { Object.keys(noves).forEach(function (k) { t[k] = noves[k]; }); });
+  }
   return { thumbs: res };
 }
 

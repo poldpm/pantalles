@@ -153,8 +153,18 @@ const serveis = {
         return resposta(200, { files: res });
       }
       if (url.indexOf('https://miniatura.prova/') === 0) {
-        const f = fitxers[url.split('/').pop().replace(/=s\d+$/, '')];
-        return f ? resposta(200, f.data) : resposta(404, '');
+        const nom = url.split('/').pop();
+        const f = fitxers[nom.replace(/=s\d+$/, '')];
+        if (!f) return resposta(404, '');
+        // Com el Drive: miniatura reduïda (si hi ha Python amb PIL; si no, l'original)
+        const mida = +((/=s(\d+)$/.exec(nom) || [])[1] || 0);
+        if (mida && mida <= 400 && /^image\//.test(f.mime)) {
+          try {
+            const petita = require('child_process').execFileSync('python3', ['-c', 'import sys,io\nfrom PIL import Image\nim=Image.open(io.BytesIO(sys.stdin.buffer.read())).convert("RGB")\nim.thumbnail((' + mida + ',' + mida + '))\nb=io.BytesIO(); im.save(b,"JPEG",quality=70); sys.stdout.buffer.write(b.getvalue())'], { input: f.data });
+            return resposta(200, petita);
+          } catch (e) { /* sense PIL */ }
+        }
+        return resposta(200, f.data);
       }
       const m = /^https:\/\/www\.googleapis\.com\/drive\/v3\/files\/([^?]+)\?(.*)$/.exec(url);
       if (m) {

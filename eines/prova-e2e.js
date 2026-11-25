@@ -332,6 +332,32 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
     const refsVelles = await p.evaluate((v) => JSON.stringify(window.__panell.S.d).indexOf('"' + v + '"'), idVell);
     ok(refsVelles < 0, 'les llistes apunten a la foto redreçada');
 
+    /* ---------- 13. Fotos repetides ---------- */
+    console.log('Fotos repetides');
+    // Les fotos de l'arxiu i la de la bústia són còpies de foto1/foto2/foto3 pujades per altres camins
+    const abansDup = await p.evaluate(() => window.__panell.S.d.media.length);
+    await p.goto(BASE + '/panell/#biblioteca');
+    await p.click('[data-accio=duplicats]');
+    await p.waitForSelector('.grup-dup', { timeout: 30000 });
+    const nGrups = await p.$$eval('.grup-dup', (e) => e.length);
+    const nEsborra = await p.$$eval('.grup-dup .posada:not(.queda)', (e) => e.length);
+    ok(nGrups >= 3, 'troba les fotos repetides encara que tinguin mides diferents (' + nGrups + ' grups, ' + nEsborra + ' còpies)');
+    await espera(600);
+    await captura(p, '20-fotos-repetides');
+    await p.click('.modal [data-ok]');
+    await p.waitForFunction((n) => window.__panell.S.d.media.length < n && !document.querySelector('.modal'), abansDup, { timeout: 60000 });
+    const despresDup = await p.evaluate(() => {
+      const d = window.__panell.S.d, ids = new Set(d.media.map((m) => m.id)), trencats = [];
+      d.playlists.forEach((l) => l.items.forEach((it) => [it.mediaId, it.text && it.text.bgMediaId].concat(it.photos || []).forEach((id) => { if (id && !ids.has(id)) trencats.push(id); })));
+      return { n: d.media.length, trencats: trencats.length };
+    });
+    ok(despresDup.n === abansDup - nEsborra, 'esborra les còpies (' + abansDup + ' → ' + despresDup.n + ' fitxers)');
+    ok(despresDup.trencats === 0, 'cap llista ni collage es queda apuntant a una foto esborrada');
+    await tv.evaluate(() => window.__pantalla.forcaSync && window.__pantalla.forcaSync());
+    await espera(3000);
+    const cfgTv = await tv.evaluate(() => { const c = window.__pantalla.config(); return c.items.filter((i) => i.mediaId && !c.media[i.mediaId]).length; });
+    ok(cfgTv === 0, 'la pantalla continua tenint tots els fitxers que mostra');
+
     ok(errorsTv.length === 0, 'cap error de JavaScript a la pantalla' + (errorsTv.length ? ': ' + errorsTv.join(' | ') : ''));
     ok(errorsP.length === 0, 'cap error de JavaScript al panell' + (errorsP.length ? ': ' + errorsP.join(' | ') : ''));
   } catch (e) {
