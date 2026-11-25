@@ -1198,14 +1198,14 @@
       b.onclick = function () {
         var t = b.dataset.afegeix;
         if (t === 'pujar') return desaEdicioAra().then(function () { triaFitxersIPuja(L.id); });
-        if (t === 'biblioteca') return triaMitjans({ multi: true }).then(function (ids) {
+        if (t === 'biblioteca') return triaMitjans({ multi: true, posats: idsDeLlista(L) }).then(function (ids) {
           if (!ids || !ids.length) return;
           ids.forEach(function (mid) { L.items.push({ id: nouIdLocal(), kind: 'media', mediaId: mid, on: true, duration: null, schedule: null }); });
           canviEdicio(); render(true); toast(ids.length + ' afegit' + (ids.length > 1 ? 's' : ''), 'ok');
         });
         var nou = itemNou(t);
         var obre = function () { editaItem(nou, function (fet) { L.items.push(Object.assign(nou, fet)); canviEdicio(); render(true); }, true); };
-        if (t === 'collage') return triaMitjans({ multi: true, kind: 'image', titol: 'Tria de 2 a 6 fotos per al collage' }).then(function (ids) {
+        if (t === 'collage') return triaMitjans({ multi: true, kind: 'image', titol: 'Tria de 2 a 6 fotos per al collage', posats: idsDeLlista(L) }).then(function (ids) {
           if (!ids || !ids.length) return;
           nou.photos = ids.slice(0, 6);
           obre();
@@ -1444,7 +1444,7 @@
           var af = $('[data-cf-afegeix]', el);
           if (af) af.onclick = function () {
             llegeix();
-            triaMitjans({ multi: true, kind: 'image', titol: 'Afegeix fotos al collage' }).then(function (ids) {
+            triaMitjans({ multi: true, kind: 'image', titol: 'Afegeix fotos al collage', posats: c.photos.slice(), textPosat: 'Ja al collage' }).then(function (ids) {
               (ids || []).forEach(function (id) { if (c.photos.indexOf(id) < 0 && c.photos.length < 6) c.photos.push(id); });
               editaItem(c, enDesar, esNou);
             });
@@ -1628,7 +1628,7 @@
       })(ids.slice(i, i + 4));
       cadena.then(function () { return carrega(); }).then(function () {
         triadesArxiu = null;
-        toast(fetes + ' foto' + (fetes === 1 ? '' : 's') + ' publicada' + (fetes === 1 ? '' : 'es') + ' a la llista del mes' + (errors ? ' · ' + errors + ' no s\'han pogut copiar' : ''), errors ? 'error' : 'ok', 6000);
+        toast(fetes + ' foto' + (fetes === 1 ? '' : 's') + (fetes === 1 ? ' publicada' : ' publicades') + ' a la llista del mes' + (errors ? ' · ' + errors + ' no s\'han pogut copiar' : ''), errors ? 'error' : 'ok', 6000);
         render(true);
       }, function () { carrega().then(function () { render(true); }); });
     };
@@ -1695,6 +1695,8 @@
       '<div class="molt-subtil" style="margin-top:6px">Del Canva: Comparteix → Baixa → <b>PDF</b> (cada pàgina serà una diapositiva), <b>PNG</b> o <b>MP4</b> (amb animacions).</div></div>';
     html += '<div class="filtres"><div class="segment">' + [['', 'Tot (' + d.media.length + ')'], ['image', 'Fotos'], ['video', 'Vídeos'], ['nous', 'Sense fer servir']].map(function (f) {
       return '<label><input type="radio" name="fb" value="' + f[0] + '"' + (filtreBib.tipus === f[0] ? ' checked' : '') + '><span>' + f[1] + '</span></label>';
+    }).join('') + '</div><div class="segment">' + [['', 'Totes'], ['v', 'Verticals'], ['h', 'Horitzontals']].map(function (f) {
+      return '<label><input type="radio" name="fo" value="' + f[0] + '"' + ((filtreBib.orient || '') === f[0] ? ' checked' : '') + '><span>' + f[1] + '</span></label>';
     }).join('') + '</div><input type="search" placeholder="Cerca pel nom…" data-cerca value="' + esc(filtreBib.cerca) + '"></div>';
     html += '<div class="mitjans" data-graella></div>';
     $('#vista').innerHTML = html;
@@ -1702,6 +1704,7 @@
       var llista = d.media.slice().reverse().filter(function (m) {
         if (filtreBib.tipus === 'nous') { if (usos[m.id] && usos[m.id].length) return false; }
         else if (filtreBib.tipus && m.kind !== filtreBib.tipus) return false;
+        if (!passaOrientacio(m, filtreBib.orient)) return false;
         return !filtreBib.cerca || m.name.toLowerCase().indexOf(filtreBib.cerca.toLowerCase()) >= 0;
       });
       $('[data-graella]').innerHTML = llista.length ? llista.map(function (m) { return htmlMitja(m, usos[m.id]); }).join('') :
@@ -1710,6 +1713,7 @@
     };
     pintaGraella();
     $$('input[name=fb]').forEach(function (r) { r.onchange = function () { filtreBib.tipus = r.value; pintaGraella(); }; });
+    $$('input[name=fo]').forEach(function (r) { r.onchange = function () { filtreBib.orient = r.value; pintaGraella(); }; });
     $('[data-cerca]').oninput = function () { filtreBib.cerca = this.value; pintaGraella(); };
     var zona = $('[data-zona]');
     zona.onclick = function () { triaFitxersIPuja(null); };
@@ -1730,15 +1734,35 @@
     return u;
   }
 
+  /** 'v' (vertical), 'h' (horitzontal), 'q' (quadrada) o '' si no en sabem la mida. */
+  function orientacio(m) {
+    if (!m.w || !m.h) return '';
+    return m.w < m.h * 0.95 ? 'v' : m.h < m.w * 0.95 ? 'h' : 'q';
+  }
   /** « · Vertical» / « · Horitzontal» / « · Quadrada» (si en sabem la mida). */
   function orientacioText(m) {
-    if (!m.w || !m.h) return '';
-    return ' · ' + (m.w < m.h * 0.95 ? 'Vertical' : m.h < m.w * 0.95 ? 'Horitzontal' : 'Quadrada');
+    var o = orientacio(m);
+    return o ? ' · ' + { v: 'Vertical', h: 'Horitzontal', q: 'Quadrada' }[o] : '';
+  }
+  /** Filtre per orientació: '' (totes), 'v' o 'h' (les quadrades surten a tots dos). */
+  function passaOrientacio(m, f) {
+    if (!f) return true;
+    var o = orientacio(m);
+    return o === f || o === 'q';
+  }
+  /** Fitxers que ja fa servir una llista (fotos, vídeos, fons de diapositives i fotos de collages). */
+  function idsDeLlista(l) {
+    var ids = [];
+    ((l && l.items) || []).forEach(function (it) {
+      [it.mediaId, it.text && it.text.bgMediaId].concat(it.photos || []).forEach(function (id) { if (id && ids.indexOf(id) < 0) ids.push(id); });
+    });
+    return ids;
   }
 
-  function htmlMitja(m, usos, triat) {
+  function htmlMitja(m, usos, triat, posada) {
     var th = S.thumbs[m.id];
-    return '<button type="button" class="mitja' + (triat ? ' triat' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? IC('play') : IC('biblioteca')) + '</div>' +
+    return '<button type="button" class="mitja' + (triat ? ' triat' : '') + (posada ? ' ja-posada' : '') + '" data-id="' + m.id + '"><div class="img" style="' + (th ? 'background-image:url(\'' + th + '\')' : '') + '">' + (th ? '' : m.kind === 'video' ? IC('play') : IC('biblioteca')) +
+      (posada ? '<span class="posada">' + IC('fet', 14) + posada + '</span>' : '') + '</div>' +
       (m.kind === 'video' ? '<span class="tipus badge" style="background:rgba(0,0,0,.65);color:#fff">' + IC('play') + (m.duration ? duradaText(m.duration) : 'vídeo') + '</span>' : '') +
       (triat !== undefined ? '<span class="marca">' + (triat ? IC('fet', 16) : '') + '</span>' : '') +
       '<div class="peu"><b title="' + esc(m.name) + '">' + esc(m.name) + '</b><span class="molt-subtil">' + mida(m.size) + orientacioText(m) +
@@ -1800,17 +1824,28 @@
       var triats = [];
       var resolt = false;
       var llista = S.d.media.slice().reverse().filter(function (m) { return !opc.kind || m.kind === opc.kind; });
+      var posats = opc.posats || []; // els que ja hi són (es veuen marcats)
+      var filtre = '', cerca = '';
       obreModal({
         titol: opc.titol || (opc.multi ? 'Tria fotos i vídeos' : 'Tria una imatge'),
         classe: 'molt-ample',
-        cos: llista.length ? '<div class="filtres" style="margin-top:0"><input type="search" placeholder="Cerca…" data-cerca></div><div class="mitjans" data-g></div>' :
+        cos: llista.length ? '<div class="filtres" style="margin-top:0"><div class="segment">' +
+          [['', 'Totes'], ['v', 'Verticals'], ['h', 'Horitzontals']].concat(posats.length ? [['nous', opc.textPosat ? 'Encara no posades' : 'Encara no a la llista']] : []).map(function (f) {
+            return '<label><input type="radio" name="ft" value="' + f[0] + '"' + (f[0] === '' ? ' checked' : '') + '><span>' + f[1] + '</span></label>';
+          }).join('') + '</div><input type="search" placeholder="Cerca…" data-cerca></div><div class="mitjans" data-g></div>' :
           '<div class="buit">La biblioteca és buida. Tanca aquesta finestra i puja fitxers.</div>',
         peu: '<span class="subtil esq" data-n></span><button class="btn" data-tanca>Cancel·la</button><button class="btn primari" data-ok disabled>Afegeix</button>',
         enObrir: function (el) {
           var g = $('[data-g]', el);
-          var pinta = function (cerca) {
+          var pinta = function () {
             if (!g) return;
-            g.innerHTML = llista.filter(function (m) { return !cerca || m.name.toLowerCase().indexOf(cerca) >= 0; }).map(function (m) { return htmlMitja(m, null, triats.indexOf(m.id) >= 0); }).join('');
+            var vistos = llista.filter(function (m) {
+              if (filtre === 'nous') { if (posats.indexOf(m.id) >= 0) return false; }
+              else if (!passaOrientacio(m, filtre)) return false;
+              return !cerca || m.name.toLowerCase().indexOf(cerca) >= 0;
+            });
+            g.innerHTML = vistos.length ? vistos.map(function (m) { return htmlMitja(m, null, triats.indexOf(m.id) >= 0, posats.indexOf(m.id) >= 0 ? (opc.textPosat || 'Ja a la llista') : ''); }).join('') :
+              '<div class="buit" style="grid-column:1/-1">Cap fitxer coincideix amb el filtre.</div>';
             $$('.mitja', g).forEach(function (b) {
               b.onclick = function () {
                 var id = b.dataset.id, i = triats.indexOf(id);
@@ -1823,8 +1858,9 @@
               };
             });
           };
-          pinta('');
-          var c = $('[data-cerca]', el); if (c) c.oninput = function () { pinta(c.value.toLowerCase()); };
+          pinta();
+          var c = $('[data-cerca]', el); if (c) c.oninput = function () { cerca = c.value.toLowerCase(); pinta(); };
+          $$('input[name=ft]', el).forEach(function (rr) { rr.onchange = function () { filtre = rr.value; pinta(); }; });
           $('[data-ok]', el).onclick = function () { resolt = true; tancaModal(); ok(triats); };
           if (!opc.multi) $('[data-ok]', el).hidden = true;
         },
@@ -1861,7 +1897,7 @@
             for (var i = 0; i < ids.length; i += 5) (function (tros) {
               cadena = cadena.then(function () { return crida('bustiaImport', { fileIds: tros, playlistId: llista }, { desa: true, timeout: 300000 }).then(function (r) { fets += r.media.length; b.innerHTML = '<span class="roda petita"></span> ' + fets + '/' + ids.length; }); });
             })(ids.slice(i, i + 5));
-            cadena.then(function () { return carrega(); }).then(function () { tancaModal(); toast(fets + ' fitxers importats', 'ok'); render(true); }, function () { b.disabled = false; b.textContent = 'Torna-ho a provar'; });
+            cadena.then(function () { return carrega(); }).then(function () { tancaModal(); toast(fets + (fets === 1 ? ' fitxer importat' : ' fitxers importats'), 'ok'); render(true); }, function () { b.disabled = false; b.textContent = 'Torna-ho a provar'; });
           };
         }
       });

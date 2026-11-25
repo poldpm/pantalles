@@ -293,6 +293,19 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
       await p.waitForFunction(() => window.__panell.S.d.media.some((x) => x.name === 'vertical-exif.jpg'), null, { timeout: 30000 });
       const mv = await p.evaluate(() => window.__panell.S.d.media.find((x) => x.name === 'vertical-exif.jpg'));
       ok(mv.w < mv.h, 'una foto de mòbil girada (EXIF) es desa ja dreta: ' + mv.w + '×' + mv.h);
+      // Selector de la biblioteca: filtre per orientació i fotos que ja són a la llista
+      await p.click('[data-afegeix=biblioteca]');
+      await p.waitForSelector('.modal .mitja');
+      const jaPosades = await p.$$eval('.modal .mitja.ja-posada', (e) => e.length);
+      const totesSel = await p.$$eval('.modal .mitja', (e) => e.length);
+      ok(jaPosades > 0 && jaPosades < totesSel, 'el selector marca les fotos que ja són a la llista (' + jaPosades + ' de ' + totesSel + ')');
+      await captura(p, '19-selector-fotos');
+      await p.click('.modal label:has(input[name=ft][value=v]) span');
+      const verticals = await p.$$eval('.modal .mitja b', (e) => e.map((x) => x.textContent));
+      ok(verticals.length === 1 && verticals[0] === 'vertical-exif.jpg', 'el filtre «Verticals» només mostra les verticals: ' + verticals.join(', '));
+      await p.click('.modal label:has(input[name=ft][value=nous]) span');
+      ok(await p.$$eval('.modal .mitja.ja-posada', (e) => e.length) === 0, 'el filtre «Encara no a la llista» amaga les que ja hi són');
+      await p.click('.modal [data-tanca]');
       await tv.waitForFunction(() => { const c = window.__pantalla.config(); return c && c.items.some((i) => i.mediaId && c.media[i.mediaId] && c.media[i.mediaId].name === 'vertical-exif.jpg'); }, null, { timeout: 30000 });
       let n2 = 0;
       while (!(await tv.evaluate(() => window.__pantalla.estat().item || '')).startsWith('vertical-exif') && n2++ < 30) { await tv.evaluate(() => window.__pantalla.seguent()); await espera(1300); }
