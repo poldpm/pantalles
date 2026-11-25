@@ -1838,6 +1838,10 @@
       im.src = src;
     });
   }
+  /** Nom «de base» d'un fitxer: sense el curs, sense «Còpia de» i sense extensió. */
+  function nomBase(n) {
+    return String(n || '').toLowerCase().replace(/^.* · /, '').replace(/^((còpia|copia|copy) (de |of )?)+/g, '').replace(/\.[a-z0-9]+$/, '').replace(/\s*\(\d+\)$/, '');
+  }
   function semblants(a, b, ma, mb) {
     if (!a || !b) return false;
     var pa = ma.w && ma.h ? ma.w / ma.h : a.prop, pb = mb.w && mb.h ? mb.w / mb.h : b.prop;
@@ -1845,7 +1849,9 @@
     // Diferència mitjana punt a punt (0-255): les còpies d'una mateixa foto queden per sota de 8
     var dif = 0;
     for (var i = 0; i < a.px.length; i++) dif += Math.abs(a.px[i] - b.px[i]);
-    return dif / a.px.length < 8;
+    // Si a més tenen el mateix nom de fitxer, som més tolerants (mateixa foto amb una altra compressió)
+    var mateixNom = nomBase(ma.name).length > 4 && nomBase(ma.name) === nomBase(mb.name);
+    return dif / a.px.length < (mateixNom ? 16 : 8);
   }
   var girades = [];
   function trobaDuplicats() {
@@ -1878,18 +1884,34 @@
   }
   function obreDuplicats() {
     obreModal({ titol: 'Fotos repetides', classe: 'molt-ample', cos: '<div style="text-align:center;padding:30px"><span class="roda"></span><p class="subtil">Comparant totes les fotos…</p></div>' });
-    // Primer cal tenir totes les miniatures (el servei en fa unes quantes a cada passada)
+    // Primer cal tenir totes les miniatures, i les del servei (les guardades al navegador poden ser antigues)
+    var ids = S.d.media.map(function (m) { return m.id; });
+    var lots = [];
+    for (var i = 0; i < ids.length; i += 150) lots.push(ids.slice(i, i + 150));
+    var fresques = Promise.all(lots.map(function (lot) { return crida('thumbs', { ids: lot }, { silenci: true, timeout: 120000 }); })).then(function (rs) {
+      rs.forEach(function (rr) { Object.keys(rr.thumbs || {}).forEach(function (id) { S.thumbs[id] = rr.thumbs[id]; }); });
+    }, function () { /* farem servir les que tenim */ });
     var totesMiniatures = function (n) {
       return miniaturesQueFalten().then(function (algun) { return algun && n < 15 ? totesMiniatures(n + 1) : null; });
     };
-    totesMiniatures(0).then(trobaDuplicats).then(function (grups) {
+    fresques.then(function () { return totesMiniatures(0); }).then(trobaDuplicats).then(function (grups) {
       if (!girades.length) return grups;
       // Hi ha miniatures que no coincideixen amb la foto: les refem i tornem a comparar
-      return crida('thumbs', { ids: girades.slice(0, 25), refresh: true }, { silenci: true }).then(function (rr) {
-        Object.keys(rr.thumbs || {}).forEach(function (id) { S.thumbs[id] = rr.thumbs[id]; });
+      // En tandes petites (cada miniatura s'ha de demanar al Drive)
+      var cadena = Promise.resolve();
+      for (var i = 0; i < Math.min(girades.length, 40); i += 8) {
+        (function (tanda) {
+          cadena = cadena.then(function () {
+            return crida('thumbs', { ids: tanda, refresh: true }, { silenci: true, timeout: 120000 }).then(function (rr) {
+              Object.keys(rr.thumbs || {}).forEach(function (id) { S.thumbs[id] = rr.thumbs[id]; });
+            }, function () { /* ho provarem la propera vegada */ });
+          });
+        })(girades.slice(i, i + 8));
+      }
+      return cadena.then(function () {
         try { ls('pnt_mini', JSON.stringify(S.thumbs)); } catch (e) { /* massa gran */ }
         return trobaDuplicats();
-      }, function () { return grups; });
+      });
     }).then(function (grups) {
       var usos = usosMitjans();
       if (!grups.length) {

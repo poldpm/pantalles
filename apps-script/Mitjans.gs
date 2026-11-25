@@ -331,7 +331,7 @@ function accioFusionaMitjans_(req, u) {
     if (canvis[bd.settings.logoMediaId]) bd.settings.logoMediaId = subst(bd.settings.logoMediaId);
     if (canvis[bd.settings.logoNegMediaId]) bd.settings.logoNegMediaId = subst(bd.settings.logoNegMediaId);
     if (bd.arxiu && bd.arxiu.aprovades) bd.arxiu.aprovades.forEach(function (a) { if (canvis[a.mediaId]) a.mediaId = subst(a.mediaId); });
-    registra_(bd, u.email, 'Ha esborrat ' + ids.length + ' foto' + (ids.length > 1 ? 's' : '') + ' repetida' + (ids.length > 1 ? 's' : '') + ' (les llistes fan servir la que es queda)');
+    registra_(bd, u.email, 'Ha esborrat ' + ids.length + ' foto' + (ids.length > 1 ? 's' : '') + (ids.length > 1 ? ' repetides' : ' repetida') + ' (les llistes fan servir la que es queda)');
   });
   llencar.forEach(function (id) { if (id) { try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* ja no hi era */ } } });
   if (esborrats.length) modificaMiniatures_(function (mini) { esborrats.forEach(function (id) { delete mini[id]; }); });
