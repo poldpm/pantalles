@@ -647,7 +647,7 @@
       });
     });
     var axp = S.d.arxiu && S.d.arxiu.on ? (S.d.arxiu.pendents || []).length : 0;
-    if (axp) alertes.unshift('Hi ha <b>' + axp + ' foto' + (axp > 1 ? 's' : '') + ' nova' + (axp > 1 ? 'es' : '') + '</b> de l\'arxiu fotogràfic per revisar. <a href="#arxiu">Revisa-les</a>.');
+    if (axp) alertes.unshift('Hi ha <b>' + axp + ' foto' + (axp > 1 ? 's' : '') + (axp > 1 ? ' noves' : ' nova') + '</b> de l\'arxiu fotogràfic per revisar. <a href="#arxiu">Revisa-les</a>.');
     if (alertes.length) html += '<div class="seccio"><h3>Cal revisar</h3><div class="pila">' + alertes.map(function (a) { return '<div class="avis-caixa">' + a + '</div>'; }).join('') + '</div></div>';
 
     html += '<div class="seccio"><h3>Ara mateix a les pantalles</h3>';
@@ -846,7 +846,7 @@
           var ids = $$('[data-a]:checked', el).map(function (c) { return c.dataset.a; });
           ok.disabled = true;
           crida('duplicateScreen', { id: p.id, toIds: ids }, { desa: true }).then(function (r) {
-            return carrega().then(function () { tancaModal(); toast('Configuració copiada a ' + r.copiades + ' pantalla' + (r.copiades === 1 ? '' : 'es') + '. S\'actualitzaran en menys d\'un minut.', 'ok', 5000); render(true); });
+            return carrega().then(function () { tancaModal(); toast('Configuració copiada a ' + r.copiades + (r.copiades === 1 ? ' pantalla' : ' pantalles') + '. S\'actualitzaran en menys d\'un minut.', 'ok', 5000); render(true); });
           }, function () { ok.disabled = false; });
         };
       }

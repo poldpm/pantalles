@@ -117,7 +117,7 @@ function escanejaArxiu_(forcar) {
       c.pendents.forEach(function (p) { ja[p.id] = true; });
       nous.forEach(function (n) { if (!ja[n.id] && !c.vistos[n.id]) c.pendents.push(n); });
       c.error = '';
-      if (nous.length) registra_(b, 'arxiu fotogràfic', nous.length + ' foto' + (nous.length > 1 ? 's' : '') + ' nova' + (nous.length > 1 ? 'es' : '') + ' per revisar');
+      if (nous.length) registra_(b, 'arxiu fotogràfic', nous.length + ' foto' + (nous.length > 1 ? 's' : '') + (nous.length > 1 ? ' noves' : ' nova') + ' per revisar');
     });
   }
   if (Object.keys(minis).length) modificaMiniatures_(function (m) { Object.keys(minis).forEach(function (k) { m[k] = minis[k]; }); });

@@ -104,7 +104,7 @@ function accioDuplicaPantalla_(req, u) {
         copiades++;
       });
       // Els avisos i la cinta que anaven a la pantalla original, també a les altres
-      registra_(bd, u.email, 'Ha copiat la configuració de «' + de.name + '» a ' + copiades + ' pantalla' + (copiades === 1 ? '' : 'es'));
+      registra_(bd, u.email, 'Ha copiat la configuració de «' + de.name + '» a ' + copiades + (copiades === 1 ? ' pantalla' : ' pantalles'));
     } else {
       nova = novaPantalla_(req.name || (de.name + ' (còpia)'), req.location || de.location);
       copiaConfigPantalla_(de, nova);
