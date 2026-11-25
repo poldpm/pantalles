@@ -125,7 +125,8 @@ function accioMiniatures_(req, u) {
   const totes = llegeixMiniatures_();
   const res = {};
   const falten = [];
-  [].concat(req.ids || []).slice(0, 300).forEach(function (id) { if (totes[id]) res[id] = totes[id]; else falten.push(id); });
+  // refresh: torna a fer les miniatures d'aquests fitxers (p. ex. si havien quedat girades)
+  [].concat(req.ids || []).slice(0, 300).forEach(function (id) { if (totes[id] && !req.refresh) res[id] = totes[id]; else falten.push(id); });
   // Fotos sense miniatura: la demanem al Drive (unes quantes cada vegada, perquè no trigui)
   if (falten.length) {
     const bd = llegeixBd_();

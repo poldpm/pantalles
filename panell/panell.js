@@ -1847,6 +1847,7 @@
     for (var i = 0; i < a.px.length; i++) dif += Math.abs(a.px[i] - b.px[i]);
     return dif / a.px.length < 8;
   }
+  var girades = [];
   function trobaDuplicats() {
     var fotos = S.d.media.filter(function (m) { return m.kind === 'image' && S.thumbs[m.id]; });
     return Promise.all(fotos.map(function (m) { return empremtaFoto(S.thumbs[m.id]); })).then(function (emp) {
@@ -1855,8 +1856,14 @@
       var uneix = function (a, b) { var ra = arrel(a), rb = arrel(b); if (ra !== rb) pare[rb] = ra; };
       S.d.media.forEach(function (m) { pare[m.id] = m.id; });
       for (var i = 0; i < fotos.length; i++) for (var j = i + 1; j < fotos.length; j++) if (semblants(emp[i], emp[j], fotos[i], fotos[j])) uneix(fotos[i].id, fotos[j].id);
-      var videos = S.d.media.filter(function (m) { return m.kind === 'video' && m.size; });
-      for (var a = 0; a < videos.length; a++) for (var b = a + 1; b < videos.length; b++) if (videos[a].size === videos[b].size) uneix(videos[a].id, videos[b].id);
+      // Còpies exactes (mateix fitxer pujat dues vegades): mateixa mida en bytes i en píxels. També els vídeos.
+      var tots = S.d.media.filter(function (m) { return m.size; });
+      for (var a = 0; a < tots.length; a++) for (var b = a + 1; b < tots.length; b++) {
+        var x = tots[a], y = tots[b];
+        if (x.kind === y.kind && x.size === y.size && (x.kind === 'video' || (x.w === y.w && x.h === y.h))) uneix(x.id, y.id);
+      }
+      // Miniatures girades respecte la foto (fotos redreçades): les demanarem de nou
+      girades = fotos.filter(function (m, k) { return emp[k] && m.w && m.h && (m.w > m.h * 1.05) !== (emp[k].prop > 1.05); }).map(function (m) { return m.id; });
       var grups = {};
       S.d.media.forEach(function (m) { var rr = arrel(m.id); (grups[rr] = grups[rr] || []).push(m); });
       var usos = usosMitjans();
@@ -1871,7 +1878,19 @@
   }
   function obreDuplicats() {
     obreModal({ titol: 'Fotos repetides', classe: 'molt-ample', cos: '<div style="text-align:center;padding:30px"><span class="roda"></span><p class="subtil">Comparant totes les fotos…</p></div>' });
-    miniaturesQueFalten().then(trobaDuplicats).then(function (grups) {
+    // Primer cal tenir totes les miniatures (el servei en fa unes quantes a cada passada)
+    var totesMiniatures = function (n) {
+      return miniaturesQueFalten().then(function (algun) { return algun && n < 15 ? totesMiniatures(n + 1) : null; });
+    };
+    totesMiniatures(0).then(trobaDuplicats).then(function (grups) {
+      if (!girades.length) return grups;
+      // Hi ha miniatures que no coincideixen amb la foto: les refem i tornem a comparar
+      return crida('thumbs', { ids: girades.slice(0, 25), refresh: true }, { silenci: true }).then(function (rr) {
+        Object.keys(rr.thumbs || {}).forEach(function (id) { S.thumbs[id] = rr.thumbs[id]; });
+        try { ls('pnt_mini', JSON.stringify(S.thumbs)); } catch (e) { /* massa gran */ }
+        return trobaDuplicats();
+      }, function () { return grups; });
+    }).then(function (grups) {
       var usos = usosMitjans();
       if (!grups.length) {
         obreModal({ titol: 'Fotos repetides', cos: '<div class="buit">No hi ha cap foto repetida. 👍</div>', peu: '<button class="btn primari" data-tanca>D\'acord</button>' });

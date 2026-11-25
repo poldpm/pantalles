@@ -194,7 +194,10 @@ function arreglaFotosGirades_() {
     registra_(b, 'sistema', 'Ha redreçat ' + Object.keys(canvis).length + ' foto' + (Object.keys(canvis).length > 1 ? 's' : '') + ' que sortien girades');
   });
   if (Object.keys(canvis).length) {
-    modificaMiniatures_(function (mini) { Object.keys(canvis).forEach(function (v) { if (mini[v]) { mini[canvis[v]] = mini[v]; delete mini[v]; } }); });
+    // Miniatura nova (de la foto ja dreta); si no es pot, aprofitem la que hi havia
+    const novesMini = {};
+    fets.forEach(function (x) { if (canvis[x.id] && x.c && x.c.driveId) novesMini[canvis[x.id]] = miniaturaFitxer_(x.c.driveId); });
+    modificaMiniatures_(function (mini) { Object.keys(canvis).forEach(function (v) { const n = canvis[v]; mini[n] = (novesMini[n] && novesMini[n].length < 60000) ? novesMini[n] : mini[v]; delete mini[v]; if (!mini[n]) delete mini[n]; }); });
     fets.forEach(function (x) { if (x.c && !x.c.dreta && canvis[x.id]) { try { DriveApp.getFileById(x.vell).setTrashed(true); } catch (e) { /* res */ } } });
   }
   return Object.keys(canvis).length;
