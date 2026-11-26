@@ -89,8 +89,7 @@
       n.appendChild(logo(ctx, tpl === 'granat'));
     } else if (tpl === 'foto') {
       var f = el('div', 'dp-foto');
-      f.style.backgroundImage = 'url("' + ctx.urlMitja(t.bgMediaId) + '")';
-      f.style.backgroundPosition = D.posicio(t.focus);
+      f.appendChild(D.omple(ctx.urlMitja(t.bgMediaId), 'cover', t.focus));
       // Foto horitzontal: a tota la pantalla, amb el bloc granat a sobre.
       // Foto vertical: només a la meitat dreta (així no s'ha d'ampliar tant).
       var ample = t.fotoMode === 'ample' || (t.fotoMode !== 'dreta' && D.esHoritzontal(ctx, t.bgMediaId));
@@ -234,7 +233,7 @@
     var lletres = 'abcdef';
     fotos.slice(0, 6).forEach(function (id, i) {
       var c = el('div', 'dp-collage-foto');
-      c.style.backgroundImage = 'url("' + ctx.urlMitja(id) + '")';
+      c.appendChild(D.omple(ctx.urlMitja(id), 'cover'));
       graella.appendChild(c);
     });
     n.appendChild(graella);
@@ -271,6 +270,44 @@
     return m.w / m.h >= 1.15;
   };
 
+  /* ---------- Fotos que omplen un requadre ----------
+   * No fem servir «background-size: cover» ni «object-fit»: els navegadors de teles antigues
+   * no els tenen o els fan malament (fotos repetides o deformades). Calculem a mà la mida i la
+   * posició de la foto dins del requadre. */
+  D.omple = function (url, mode, focus) {
+    var caixa = el('div', 'dp-omple');
+    var img = document.createElement('img');
+    img.className = 'dp-omple-img'; img.alt = '';
+    img.setAttribute('data-mode', mode || 'cover');
+    img.setAttribute('data-focus', focus || '');
+    img.onload = function () { D.colloca(img); setTimeout(function () { D.colloca(img); }, 50); };
+    img.src = url;
+    caixa.appendChild(img);
+    return caixa;
+  };
+  /** Mida i posició d'una foto dins del seu requadre («cover»: l'omple; «contain»: hi cap sencera). */
+  D.colloca = function (img) {
+    var caixa = img.parentNode;
+    if (!caixa) return;
+    var W = caixa.clientWidth, H = caixa.clientHeight, w = img.naturalWidth, h = img.naturalHeight;
+    if (!W || !H || !w || !h) return;
+    var mode = img.getAttribute('data-mode') || 'cover', focus = img.getAttribute('data-focus') || '';
+    var k = mode === 'contain' ? Math.min(W / w, H / h) : Math.max(W / w, H / h);
+    var iw = w * k, ih = h * k;
+    var fy = focus === 'top' ? 0.18 : focus === 'bottom' ? 0.82 : 0.5;
+    var st = img.style;
+    st.position = 'absolute'; st.maxWidth = 'none'; st.maxHeight = 'none';
+    st.width = Math.round(iw) + 'px'; st.height = Math.round(ih) + 'px';
+    st.left = Math.round((W - iw) / 2) + 'px'; st.top = Math.round((H - ih) * fy) + 'px';
+    st.right = 'auto'; st.bottom = 'auto';
+  };
+  /** Torna a col·locar totes les fotos d'un tros de pantalla (p. ex. si ha canviat de mida). */
+  D.recolloca = function (arrel) {
+    if (!arrel || !arrel.querySelectorAll) return;
+    var imgs = arrel.querySelectorAll('img.dp-omple-img');
+    for (var i = 0; i < imgs.length; i++) D.colloca(imgs[i]);
+  };
+
   /** Enquadrament: quina part de la foto es veu quan s'ha de retallar. */
   D.posicio = function (focus) { return focus === 'top' ? 'center 18%' : focus === 'bottom' ? 'center 82%' : 'center center'; };
 
@@ -288,6 +325,7 @@
     if (!node || !node.clientHeight) return;
     node.classList.toggle('dp-vertical', node.clientHeight > node.clientWidth);
     if (node.classList.contains('dp-collage')) aplicaGraella(node, node.clientHeight > node.clientWidth);
+    D.recolloca(node);
     var cos = node.querySelector('.dp-cos');
     if (!cos) return;
     var pare = cos.parentElement, cs = getComputedStyle(pare);

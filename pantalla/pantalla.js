@@ -7,7 +7,7 @@
  * ===================================================================== */
 (function () {
   'use strict';
-  var VERSIO = '1.9.0';
+  var VERSIO = '1.9.1';
   var Pnt = window.Pnt;
   // Paràmetres de l'adreça (sense URLSearchParams: les teles Samsung antigues no el tenen)
   var qs = (function () {
@@ -349,7 +349,7 @@
     escenari.style.height = h + 'px';
     escenari.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
     Pnt.diapo.escala(escenari, w, h);
-    if (window.Pnt && actual && actual.capa) { var dp = actual.capa.querySelector('.dp'); if (dp) Pnt.diapo.ajusta(dp); }
+    if (window.Pnt && actual && actual.capa) { var dp = actual.capa.querySelector('.dp'); if (dp) Pnt.diapo.ajusta(dp); Pnt.diapo.recolloca(actual.capa); }
     pintaCinta();
   }
 
@@ -674,11 +674,13 @@
           if (!u) return ko(new Error('fitxer no descarregat'));
           var ajust = ajustMitja(item);
           if (meta.kind === 'image') {
-            if (ajust === 'contain') { var fb = document.createElement('div'); fb.className = 'fons-borros'; fb.style.backgroundImage = 'url("' + u + '")'; capa.appendChild(fb); }
+            if (ajust === 'contain') { var fb = Pnt.diapo.omple(u, 'cover'); fb.className += ' fons-borros'; capa.appendChild(fb); }
+            // La mida i la posició es calculen a mà (Pnt.diapo.colloca): les teles antigues no tenen «object-fit»
             var img = new Image();
-            img.className = 'mitja'; img.alt = '';
-            if (item.focus) img.style.objectPosition = Pnt.diapo.posicio(item.focus);
-            img.onload = function () { (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(ok); };
+            img.className = 'mitja dp-omple-img'; img.alt = '';
+            img.setAttribute('data-mode', ajust === 'contain' ? 'contain' : 'cover');
+            img.setAttribute('data-focus', item.focus || '');
+            img.onload = function () { Pnt.diapo.colloca(img); (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(ok); };
             img.onerror = function () { ko(new Error('imatge malmesa')); };
             img.src = u;
             if (item.kenburns) { capa.classList.add('kenburns'); img.style.animationDuration = img.style.webkitAnimationDuration = (d || 10) + 's'; }
@@ -759,6 +761,7 @@
     actual = { item: item, capa: capa };
     var dp = capa.querySelector('.dp');
     if (dp) Pnt.diapo.ajusta(dp);
+    Pnt.diapo.recolloca(capa);
     void capa.offsetWidth;
     capa.classList.add('visible');
     if (anterior && anterior.capa) {
